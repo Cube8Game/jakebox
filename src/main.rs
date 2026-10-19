@@ -71,7 +71,7 @@ async fn main() {
                                     Ok(event) => {
                                         match event {
                                             Event::Waiting => {}
-                                            Event::TextPrompt { prompt, answer: _ } => {
+                                            Event::TextPrompt { prompt } => {
                                                 println!("{}", prompt);
                                                 let mut answer = String::new();
                                                 stdin().read_line(&mut answer).unwrap();
@@ -113,7 +113,7 @@ async fn main() {
                                     println!("{:?}", state);
                                     let mut new_map = Vec::new();
                                     for player in state.get_players().values() {
-                                        new_map.push(player.with_event(Event::TextPrompt { prompt: prompt.clone(), answer: String::new() }));
+                                        new_map.push(player.with_event(Event::TextPrompt { prompt: prompt.clone() }));
                                     }
                                     connection.send_action(GameAction::Host(HostGameAction::UpdatePlayerMap { new_map })).await.expect("Error when trying to update player map");
                                     println!("Successfully sent player map update.");

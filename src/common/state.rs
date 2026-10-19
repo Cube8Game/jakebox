@@ -72,6 +72,6 @@ impl Player {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum Event {
     Waiting,
-    TextPrompt { prompt: String, answer: String },
+    TextPrompt { prompt: String },
     TextPromptComplete { answer: String }
 }

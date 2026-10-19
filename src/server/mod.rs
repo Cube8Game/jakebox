@@ -107,7 +107,7 @@ async fn action(State(state): State<AppState>, Path(id): Path<String>, Json(requ
                 GameAction::Client(client_action) => {
                     match client_action {
                         ClientGameAction::SubmitText { text } => {
-                            if let Event::TextPrompt { prompt: _, answer: _ } = game.get_player_event(&request.username) {
+                            if let Event::TextPrompt { prompt: _ } = game.get_player_event(&request.username) {
                                 game.set_player_event(&request.username, Event::TextPromptComplete { answer: text });
                             } else {
                                 return Err(StatusCode::CONFLICT);
