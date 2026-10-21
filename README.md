@@ -6,7 +6,7 @@ Jakebox is meant to be a game where you try to make your friends laugh by answer
 
 - [X]  CLI
 - [ ]  Web GUI
-- [ ]  Lua scripting
+- [X]  Lua scripting
 - [ ]  Official hosting
 
 ## How to use

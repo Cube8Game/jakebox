@@ -1,7 +1,7 @@
-use std::{io::stdin, thread::sleep, time::Duration};
+use std::{io::stdin, path::PathBuf, thread::sleep, time::Duration};
 
 use clap::Parser;
-use jakebox::{client::connection::{common::Connection, http::HttpConnection}, common::{connection::{ClientGameAction, GameAction, HostGameAction}, state::Event}, server};
+use jakebox::{client::{connection::{common::Connection, http::HttpConnection}, scripting}, common::{connection::{ClientGameAction, GameAction, HostGameAction}, state::Event}, server};
 
 #[derive(Parser)]
 struct Cli {
@@ -37,7 +37,9 @@ enum ClientCommands {
         #[arg(long)]
         username: String,
         #[command(subcommand)]
-        command: Option<HostCommands>
+        command: Option<HostCommands>,
+        #[arg(long)]
+        script: Option<PathBuf>
     }
 }
 
@@ -47,7 +49,7 @@ enum HostCommands {
         #[arg(long)]
         prompt: String,
         #[arg(long)]
-        join_code: String,
+        join_code: String
     }
 }
 
@@ -93,13 +95,18 @@ async fn main() {
                         }
                     }
                 }
-                ClientCommands::Host { url, username, command } => {
+                ClientCommands::Host { url, username, command, script } => {
                     match command {
                         None => {
                             let connection_result = HttpConnection::host(url, username).await;
                             match connection_result {
                                 Ok(connection) => {
                                     println!("Connection Successful. Join code is {}", connection.game_id);
+                                    if let Some(script) = script {
+                                        if let Err(error) = scripting::start_game(script, connection).await {
+                                            eprintln!("Error running script: {}", error)
+                                        }
+                                    }
                                 }
                                 Err(error) => {
                                     println!("Error hosting game: {}", error);

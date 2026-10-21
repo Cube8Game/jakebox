@@ -7,6 +7,7 @@ edition = "2024"
 axum = "0.8.9"
 clap = { version = "4.6.7", features = ["derive"] }
 dashmap = "6.2.1"
+mlua = { version = "0.12.2", features = ["luau", "async", "serde", "vendored", "macros"] }
 rand = "0.10.3"
 reqwest = { version = "0.13.5", features = ["json", "blocking"] }
 serde = { version = "1.0.229", features = ["derive"] }
