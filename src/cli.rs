@@ -1,6 +1,9 @@
-use std::{io::stdin, path::PathBuf, thread::sleep, time::Duration};
+#[cfg(feature = "client")]
+use std::{io::stdin, thread::sleep, time::Duration};
+use std::path::PathBuf;
 
 use clap::Parser;
+#[cfg(feature = "client")]
 use crate::{common::{connection::{ClientGameAction, GameAction, HostGameAction}, state::Event}};
 
 #[cfg(feature = "server")]
