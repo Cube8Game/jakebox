@@ -5,19 +5,17 @@ edition = "2024"
 
 [dependencies]
 axum = "0.8.9"
-clap = { version = "4.6.7", features = ["derive"] }
-dashmap = "6.2.1"
-mlua = { version = "0.12.2", features = ["luau", "async", "serde", "vendored", "macros"] }
-rand = "0.10.3"
-reqwest = { version = "0.13.5", features = ["json", "blocking"] }
+clap = { version = "4.6.7", features = ["derive"], optional = true }
+dashmap = { version = "6.2.1", optional = true }
+mlua = { version = "0.12.2", features = ["luau", "async", "serde", "vendored", "macros"], optional = true }
+rand = { version = "0.10.3", optional = true }
+reqwest = { version = "0.13.5", features = ["json", "blocking"], optional = true }
 serde = { version = "1.0.229", features = ["derive"] }
-serde_json = "1.0.154"
-tempfile = "3.27.0"
-thiserror = "2.0.21"
+thiserror = { version = "2.0.21", optional = true }
 tokio = { version = "1.53.3", features = ["macros", "rt-multi-thread"] }
 
 [features]
-server = []
-client = []
-cli = []
+server = ["dep:dashmap", "dep:rand"]
+client = ["dep:mlua", "dep:reqwest", "dep:thiserror"]
+cli = ["dep:clap", "dep:thiserror"]
 default = ["server", "client", "cli"]
