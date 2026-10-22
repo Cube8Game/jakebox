@@ -91,7 +91,7 @@ async fn main() {
                             }
                         }
                         Err(error) => {
-                            println!("Error connecting to {}: {}", join_code, error);
+                            eprintln!("Error connecting to {}: {}", join_code, error);
                         }
                     }
                 }
@@ -109,7 +109,7 @@ async fn main() {
                                     }
                                 }
                                 Err(error) => {
-                                    println!("Error hosting game: {}", error);
+                                    eprintln!("Error hosting game: {}", error);
                                 }
                             }
                         }
@@ -126,7 +126,7 @@ async fn main() {
                                     println!("Successfully sent player map update.");
                                 }
                                 Err(error) => {
-                                    println!("Could not start prompt: {}", error);
+                                    eprintln!("Could not start prompt: {}", error);
                                 }
                             }
                         }
