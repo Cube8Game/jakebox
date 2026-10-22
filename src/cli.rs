@@ -1,7 +1,12 @@
 use std::{io::stdin, path::PathBuf, thread::sleep, time::Duration};
 
 use clap::Parser;
-use crate::{client::{connection::{common::Connection, http::HttpConnection}, scripting}, common::{connection::{ClientGameAction, GameAction, HostGameAction}, state::Event}, server};
+use crate::{common::{connection::{ClientGameAction, GameAction, HostGameAction}, state::Event}};
+
+#[cfg(feature = "server")]
+use crate::server;
+#[cfg(feature = "client")]
+use crate::client::{connection::{common::Connection, http::HttpConnection}, scripting};
 
 #[derive(Parser)]
 struct Cli {
@@ -11,10 +16,12 @@ struct Cli {
 
 #[derive(clap::Subcommand)]
 enum Commands {
+    #[cfg(feature = "server")]
     Server {
         #[arg(long)]
         url: String
     },
+    #[cfg(feature = "client")]
     Client {
         #[command(subcommand)]
         command: ClientCommands
@@ -57,9 +64,11 @@ pub async fn start_cli() {
     let cli = Cli::parse();
 
     match cli.command {
+        #[cfg(feature = "server")]
         Some(Commands::Server { url }) => {
             println!("{:?}", server::start_server(&url, 100).await);
         }
+        #[cfg(feature = "client")]
         Some(Commands::Client { command }) => {
             match command {
                 ClientCommands::Join { url, join_code, username } => {
