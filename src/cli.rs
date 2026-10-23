@@ -113,10 +113,8 @@ pub async fn start_cli() {
                             match connection_result {
                                 Ok(connection) => {
                                     println!("Connection Successful. Join code is {}", connection.game_id);
-                                    if let Some(script) = script {
-                                        if let Err(error) = scripting::start_game(script, connection).await {
-                                            eprintln!("Error running script: {}", error)
-                                        }
+                                    if let Some(script) = script && let Err(error) = scripting::start_game(script, connection).await {
+                                        eprintln!("Error running script: {}", error)
                                     }
                                 }
                                 Err(error) => {

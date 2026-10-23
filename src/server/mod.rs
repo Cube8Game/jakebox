@@ -19,7 +19,7 @@ impl AppState {
         assert!(capacity <= MAX_CAPACITY);
         Self {
             games: Arc::new(DashMap::new()),
-            capacity: capacity
+            capacity
         }
     }
 }
