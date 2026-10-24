@@ -2,6 +2,7 @@
 use std::{io::stdin, thread::sleep, time::Duration};
 use std::path::PathBuf;
 
+use anyhow::Result;
 use clap::Parser;
 #[cfg(feature = "client")]
 use crate::{common::{connection::{ClientGameAction, GameAction, HostGameAction}, state::Event}};
@@ -63,86 +64,63 @@ enum HostCommands {
     }
 }
 
-pub async fn start_cli() {
+pub async fn start_cli() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
         #[cfg(feature = "server")]
         Some(Commands::Server { url }) => {
             println!("{:?}", server::start_server(&url, 100).await);
+            Ok(())
         }
         #[cfg(feature = "client")]
         Some(Commands::Client { command }) => {
             match command {
                 ClientCommands::Join { url, join_code, username } => {
-                    let connection_result = HttpConnection::join(url, join_code.clone(), username).await;
-                    match connection_result {
-                        Ok(connection) => {
-                            println!("Connection Successful.");
-                            loop {
-                                match connection.get_event().await {
-                                    Ok(event) => {
-                                        match event {
-                                            Event::Waiting => {}
-                                            Event::TextPrompt { prompt } => {
-                                                println!("{}", prompt);
-                                                let mut answer = String::new();
-                                                stdin().read_line(&mut answer).unwrap();
-                                                connection.send_action(GameAction::Client(ClientGameAction::SubmitText { text: answer })).await.expect("Connection failed");
-                                            }
-                                            Event::TextPromptComplete { answer: _ } => {}
-                                        }
-                                    }
-                                    Err(error) => {
-                                        eprintln!("Error: {}", error);
-                                        break;
-                                    }
-                                }
-                                sleep(Duration::from_secs(2));
+                    let connection = HttpConnection::join(url, join_code.clone(), username).await?;
+                    println!("Connection Successful.");
+                    loop {
+                        let event = connection.get_event().await?;
+                        match event {
+                            Event::Waiting => {}
+                            Event::TextPrompt { prompt } => {
+                                println!("{}", prompt);
+                                let mut answer = String::new();
+                                stdin().read_line(&mut answer)?;
+                                connection.send_action(GameAction::Client(ClientGameAction::SubmitText { text: answer })).await?;
                             }
+                            Event::TextPromptComplete { answer: _ } => {}
                         }
-                        Err(error) => {
-                            eprintln!("Error connecting to {}: {}", join_code, error);
-                        }
+                        sleep(Duration::from_secs(2));
                     }
                 }
                 ClientCommands::Host { url, username, command, script } => {
                     match command {
                         None => {
-                            let connection_result = HttpConnection::host(url, username).await;
-                            match connection_result {
-                                Ok(connection) => {
-                                    println!("Connection Successful. Join code is {}", connection.game_id);
-                                    if let Some(script) = script && let Err(error) = scripting::start_game(script, connection).await {
-                                        eprintln!("Error running script: {}", error)
-                                    }
-                                }
-                                Err(error) => {
-                                    eprintln!("Error hosting game: {}", error);
-                                }
+                            let connection = HttpConnection::host(url, username).await?;
+                            println!("Connection Successful. Join code is {}", connection.game_id);
+                            if let Some(script) = script {
+                                scripting::start_game(script, connection).await
+                                    .map_err(|e| anyhow::anyhow!(e.to_string()))?
                             }
+                            Ok(())
                         }
                         Some(HostCommands::StartPrompt { prompt, join_code }) => {
                             let connection = HttpConnection::new(url, join_code, username);
-                            match connection.get_state().await {
-                                Ok(state) => {
-                                    println!("{:?}", state);
-                                    let mut new_map = Vec::new();
-                                    for player in state.get_players().values() {
-                                        new_map.push(player.with_event(Event::TextPrompt { prompt: prompt.clone() }));
-                                    }
-                                    connection.send_action(GameAction::Host(HostGameAction::UpdatePlayerMap { new_map })).await.expect("Error when trying to update player map");
-                                    println!("Successfully sent player map update.");
-                                }
-                                Err(error) => {
-                                    eprintln!("Could not start prompt: {}", error);
-                                }
+                            let state = connection.get_state().await?;
+                            println!("{:?}", state);
+                            let mut new_map = Vec::new();
+                            for player in state.get_players().values() {
+                                new_map.push(player.with_event(Event::TextPrompt { prompt: prompt.clone() }));
                             }
+                            connection.send_action(GameAction::Host(HostGameAction::UpdatePlayerMap { new_map })).await?;
+                            println!("Successfully sent player map update.");
+                            Ok(())
                         }
                     }
                 }
             }
         }
-        None => {}
+        None => Ok(())
     }
 }
