@@ -39,15 +39,22 @@ pub async fn start_server(address: &str, game_capacity: usize) -> std::io::Resul
         .with_state(app_state);
 
     let api_router = Router::new()
-        .nest("/unstable/games", games_router);
+        .route("/status", get(status))
+        .nest("/games", games_router);
 
     let app = Router::new()
-        .nest("/api", api_router);
+        .nest("/api/unstable", api_router);
 
     let listener = tokio::net::TcpListener::bind(address).await?;
 
     axum::serve(listener, app).await
 }
+
+
+async fn status() -> StatusCode {
+    StatusCode::OK
+}
+
 
 fn generate_join_code() -> String {
     let mut rng = rand::rng();

@@ -23,8 +23,24 @@ pub struct HttpConnection {
 }
 
 impl HttpConnection {
+    const SERVER_LIST: [&'static str; 2] = [
+        "https://box.jakewhibley.org",
+        "https://gentle-pine-a4b306fc.tunnl.gg", // Backup server
+    ];
+
     pub fn new(server_ip: String, game_id: String, username: String) -> Self {
         Self { client: reqwest::Client::new(), server_ip, game_id, username }
+    }
+
+    pub async fn find_server() -> Option<&'static str> {
+        for server in Self::SERVER_LIST {
+            if let Ok(response) = reqwest::get([server, "/api/unstable/status"].concat()).await {
+                if response.status() == StatusCode::OK {
+                    return Some(server);
+                }
+            }
+        }
+        None
     }
 }
 

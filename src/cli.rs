@@ -36,7 +36,7 @@ enum Commands {
 enum ClientCommands {
     Join {
         #[arg(long)]
-        url: String,
+        url: Option<String>,
         #[arg(long)]
         join_code: String,
         #[arg(long)]
@@ -44,7 +44,7 @@ enum ClientCommands {
     },
     Host {
         #[arg(long)]
-        url: String,
+        url: Option<String>,
         #[arg(long)]
         username: String,
         #[command(subcommand)]
@@ -77,6 +77,12 @@ pub async fn start_cli() -> Result<()> {
         Some(Commands::Client { command }) => {
             match command {
                 ClientCommands::Join { url, join_code, username } => {
+                    let url = match url {
+                        Some(url) => url,
+                        None => HttpConnection::find_server().await.ok_or_else(
+                            || anyhow::anyhow!("No default servers are up")
+                        )?.to_string()
+                    };
                     let connection = HttpConnection::join(url, join_code.clone(), username).await?;
                     println!("Connection Successful.");
                     loop {
@@ -97,6 +103,12 @@ pub async fn start_cli() -> Result<()> {
                 ClientCommands::Host { url, username, command, script } => {
                     match command {
                         None => {
+                            let url = match url {
+                                Some(url) => url,
+                                None => HttpConnection::find_server().await.ok_or_else(
+                                    || anyhow::anyhow!("No default servers are up")
+                                )?.to_string()
+                            };
                             let connection = HttpConnection::host(url, username).await?;
                             println!("Connection Successful. Join code is {}", connection.game_id);
                             if let Some(script) = script {
@@ -106,6 +118,12 @@ pub async fn start_cli() -> Result<()> {
                             Ok(())
                         }
                         Some(HostCommands::StartPrompt { prompt, join_code }) => {
+                            let url = match url {
+                                Some(url) => url,
+                                None => HttpConnection::find_server().await.ok_or_else(
+                                    || anyhow::anyhow!("No default servers are up")
+                                )?.to_string()
+                            };
                             let connection = HttpConnection::new(url, join_code, username);
                             let state = connection.get_state().await?;
                             println!("{:?}", state);
