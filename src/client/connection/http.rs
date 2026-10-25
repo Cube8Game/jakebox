@@ -114,7 +114,7 @@ impl Connection<Response, Error> for HttpConnection {
     async fn get_state(&self) -> Result<GameState> {
         let response = self
             .client
-            .get(self.game_url("state"))
+            .post(self.game_url("state"))
             .json(&self.request(None))
             .send()
             .await
