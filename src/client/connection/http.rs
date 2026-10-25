@@ -99,7 +99,7 @@ impl Connection<Response, Error> for HttpConnection {
     async fn get_event(&self) -> Result<Event> {
         let response = self
             .client
-            .get(self.game_url("event"))
+            .post(self.game_url("event"))
             .json(&self.request(None))
             .send()
             .await

@@ -34,13 +34,13 @@ pub async fn start_server(address: &str, game_capacity: usize) -> std::io::Resul
     let games_router = Router::new()
         .route("/", post(post_game))
         .route("/{id}/join", post(join))
-        .route("/{id}/event", get(get_event))
-        .route("/{id}/state", get(get_state))
+        .route("/{id}/event", post(get_event))
+        .route("/{id}/state", post(get_state))
         .route("/{id}/action", post(action))
         .with_state(app_state);
 
     let api_router = Router::new()
-        .route("/status", get(status))
+        .route("/status", post(status))
         .nest("/games", games_router);
 
     let cors = CorsLayer::new()
