@@ -25,7 +25,7 @@ pub struct HttpConnection {
 impl HttpConnection {
     const SERVER_LIST: [&'static str; 2] = [
         "https://box.jakewhibley.org",
-        "https://gentle-pine-a4b306fc.tunnl.gg", // Backup server
+        "https://jakebox.tunnl.gg", // Backup server
     ];
 
     pub fn new(server_ip: String, game_id: String, username: String) -> Self {
