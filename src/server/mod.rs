@@ -1,8 +1,9 @@
 use std::sync::Arc;
 
-use axum::{Json, Router, extract::{Path, State}, http::StatusCode, routing::{get, post}};
+use axum::{Json, Router, extract::{Path, State}, http::{Method, StatusCode}, routing::{get, post}};
 use dashmap::DashMap;
 use rand::RngExt;
+use tower_http::cors::{Any, CorsLayer};
 
 use crate::common::{connection::{ClientGameAction, GameAction, GameRequest, HostGameAction}, state::{Event, GameState}};
 
@@ -42,8 +43,16 @@ pub async fn start_server(address: &str, game_capacity: usize) -> std::io::Resul
         .route("/status", get(status))
         .nest("/games", games_router);
 
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods([
+            Method::GET,
+            Method::POST
+        ]);
+
     let app = Router::new()
-        .nest("/api/unstable", api_router);
+        .nest("/api/unstable", api_router)
+        .layer(cors);
 
     let listener = tokio::net::TcpListener::bind(address).await?;
 
