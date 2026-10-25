@@ -3,6 +3,7 @@ use std::sync::Arc;
 use axum::{Json, Router, extract::{Path, State}, http::{Method, StatusCode}, routing::{get, post}};
 use dashmap::DashMap;
 use rand::RngExt;
+use reqwest::header::CONTENT_TYPE;
 use tower_http::cors::{Any, CorsLayer};
 
 use crate::common::{connection::{ClientGameAction, GameAction, GameRequest, HostGameAction}, state::{Event, GameState}};
@@ -49,7 +50,8 @@ pub async fn start_server(address: &str, game_capacity: usize) -> std::io::Resul
             Method::GET,
             Method::POST,
             Method::OPTIONS
-        ]);
+        ])
+        .allow_headers([CONTENT_TYPE]);
 
     let app = Router::new()
         .nest("/api/unstable", api_router)
