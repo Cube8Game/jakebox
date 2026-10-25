@@ -24,7 +24,7 @@ tokio = { version = "1.53.3", features = ["macros", "rt-multi-thread"] }
 tokio = { version = "1.53.3", features = ["macros", "rt"] }
 
 [features]
-server = ["dep:dashmap", "dep:rand"]
+server = ["dep:dashmap", "dep:rand", "dep:axum"]
 client = ["dep:reqwest", "dep:thiserror"]
 host = ["client", "dep:mlua"]
 cli = ["dep:clap"]
