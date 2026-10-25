@@ -5,3 +5,5 @@ pub mod server;
 pub mod common;
 #[cfg(feature = "cli")]
 pub mod cli;
+#[cfg(feature = "web")]
+pub mod web;

@@ -1,16 +1,21 @@
 #[cfg(feature = "client")]
 use std::{io::stdin, thread::sleep, time::Duration};
+#[cfg(feature = "host")]
 use std::path::PathBuf;
 
 use anyhow::Result;
 use clap::Parser;
 #[cfg(feature = "client")]
-use crate::{common::{connection::{ClientGameAction, GameAction, HostGameAction}, state::Event}};
+use crate::{common::{connection::{ClientGameAction, GameAction}, state::Event}};
+#[cfg(feature = "host")]
+use crate::common::connection::HostGameAction;
 
 #[cfg(feature = "server")]
 use crate::server;
 #[cfg(feature = "client")]
-use crate::client::{connection::{common::Connection, http::HttpConnection}, scripting};
+use crate::client::{connection::{common::Connection, http::HttpConnection}};
+#[cfg(feature = "host")]
+use crate::client::scripting;
 
 #[derive(Parser)]
 struct Cli {
@@ -42,6 +47,7 @@ enum ClientCommands {
         #[arg(long)]
         username: String
     },
+    #[cfg(feature = "host")]
     Host {
         #[arg(long)]
         url: Option<String>,
@@ -54,6 +60,7 @@ enum ClientCommands {
     }
 }
 
+#[cfg(feature = "host")]
 #[derive(clap::Subcommand)]
 enum HostCommands {
     StartPrompt {
@@ -100,6 +107,7 @@ pub async fn start_cli() -> Result<()> {
                         sleep(Duration::from_secs(2));
                     }
                 }
+                #[cfg(feature = "host")]
                 ClientCommands::Host { url, username, command, script } => {
                     match command {
                         None => {

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-#[cfg(feature = "client")]
+#[cfg(feature = "host")]
 use mlua::prelude::*;
 use serde::{Serialize, Deserialize};
 
@@ -49,7 +49,7 @@ impl GameState {
     }
 }
 
-#[cfg(feature = "client")]
+#[cfg(feature = "host")]
 impl IntoLua for GameState {
     fn into_lua(self, lua: &mlua::prelude::Lua) -> LuaResult<mlua::prelude::LuaValue> {
         let table = lua.create_table()?;
@@ -58,7 +58,7 @@ impl IntoLua for GameState {
     }
 }
 
-#[cfg(feature = "client")]
+#[cfg(feature = "host")]
 impl FromLua for GameState {
     fn from_lua(value: LuaValue, _lua: &Lua) -> LuaResult<Self> {
         let table = value.as_table().ok_or_else(|| {
@@ -106,7 +106,7 @@ impl Player {
     }
 }
 
-#[cfg(feature = "client")]
+#[cfg(feature = "host")]
 impl IntoLua for Player {
     fn into_lua(self, lua: &mlua::prelude::Lua) -> LuaResult<mlua::prelude::LuaValue> {
         let table = lua.create_table()?;
@@ -116,7 +116,7 @@ impl IntoLua for Player {
     }
 }
 
-#[cfg(feature = "client")]
+#[cfg(feature = "host")]
 impl FromLua for Player {
     fn from_lua(value: LuaValue, _lua: &Lua) -> LuaResult<Self> {
         let table = value.as_table().ok_or_else(|| {
@@ -154,7 +154,7 @@ pub enum Event {
     TextPromptComplete { answer: String }
 }
 
-#[cfg(feature = "client")]
+#[cfg(feature = "host")]
 impl IntoLua for Event {
     fn into_lua(self, lua: &mlua::prelude::Lua) -> LuaResult<mlua::prelude::LuaValue> {
         let table = lua.create_table()?;
@@ -175,7 +175,7 @@ impl IntoLua for Event {
     }
 }
 
-#[cfg(feature = "client")]
+#[cfg(feature = "host")]
 impl FromLua for Event {
     fn from_lua(value: LuaValue, _lua: &Lua) -> LuaResult<Self> {
         let table = value.as_table().ok_or_else(|| {

@@ -32,11 +32,11 @@ impl HttpConnection {
         Self { client: reqwest::Client::new(), server_ip, game_id, username }
     }
 
-    pub async fn find_server() -> Option<&'static str> {
+    pub async fn find_server() -> Option<String> {
         for server in Self::SERVER_LIST {
             if let Ok(response) = reqwest::get([server, "/api/unstable/status"].concat()).await {
                 if response.status() == StatusCode::OK {
-                    return Some(server);
+                    return Some(server.to_string());
                 }
             }
         }
