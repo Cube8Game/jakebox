@@ -3,7 +3,7 @@ use std::sync::Arc;
 use axum::{Json, Router, extract::{Path, State}, http::{Method, StatusCode, header::CONTENT_TYPE}, routing::{get, post}};
 use dashmap::DashMap;
 use rand::RngExt;
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::{cors::{Any, CorsLayer}, services::ServeDir};
 
 use crate::common::{connection::{ClientGameAction, GameAction, GameRequest, HostGameAction}, state::{Event, GameState}};
 
@@ -52,6 +52,17 @@ pub async fn start_server(address: &str, game_capacity: usize) -> std::io::Resul
         ])
         .allow_headers([CONTENT_TYPE]);
 
+    #[cfg(feature = "static-hosting")]
+    let static_app = ServeDir::new("dist")
+        .append_index_html_on_directories(true);
+
+    #[cfg(feature = "static-hosting")]
+    let app = Router::new()
+        .nest("/api/unstable", api_router)
+        .fallback_service(static_app)
+        .layer(cors);
+
+    #[cfg(not(feature = "static-hosting"))]
     let app = Router::new()
         .nest("/api/unstable", api_router)
         .layer(cors);
