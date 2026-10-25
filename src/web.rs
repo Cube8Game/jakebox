@@ -81,7 +81,7 @@ pub fn App() -> impl IntoView {
                 .expect("Input should be mounted")
                 .value();
             
-            set_join_code.set(Some(new_username));
+            set_username.set(Some(new_username));
             
             let new_join_code = join_code_input
                 .get()

@@ -47,7 +47,8 @@ pub async fn start_server(address: &str, game_capacity: usize) -> std::io::Resul
         .allow_origin(Any)
         .allow_methods([
             Method::GET,
-            Method::POST
+            Method::POST,
+            Method::OPTIONS
         ]);
 
     let app = Router::new()
