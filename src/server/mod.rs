@@ -78,6 +78,9 @@ fn generate_join_code() -> String {
 async fn join(State(state): State<AppState>, Path(id): Path<String>, Json(request): Json<GameRequest>) -> Result<(), StatusCode> {
     if let Some(mut pair) = state.games.get_mut(&id) {
         let game = pair.value_mut();
+        if game.get_players().contains_key(&request.username) {
+            return Err(StatusCode::CONFLICT)
+        }
         game.add_player(request.username);
         Ok(())
     } else {
