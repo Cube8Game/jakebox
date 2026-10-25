@@ -40,7 +40,7 @@ pub async fn start_server(address: &str, game_capacity: usize) -> std::io::Resul
         .with_state(app_state);
 
     let api_router = Router::new()
-        .route("/status", post(status))
+        .route("/status", get(status))
         .nest("/games", games_router);
 
     let cors = CorsLayer::new()
