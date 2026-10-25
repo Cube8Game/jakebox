@@ -8,6 +8,7 @@ anyhow = "1.0.104"
 axum = { version = "0.8.9", optional = true }
 clap = { version = "4.6.7", features = ["derive"], optional = true }
 dashmap = { version = "6.2.1", optional = true }
+gloo-timers = { version = "0.4.0", features = ["futures"], optional = true }
 leptos = { version = "0.8.22", features = ["csr"], optional = true }
 mlua = { version = "0.12.2", features = ["luau", "async", "serde", "vendored", "macros"], optional = true }
 rand = { version = "0.10.3", optional = true }
@@ -27,5 +28,5 @@ server = ["dep:dashmap", "dep:rand", "dep:axum", "dep:tower-http"]
 client = ["dep:reqwest", "dep:thiserror"]
 host = ["client", "dep:mlua"]
 cli = ["dep:clap"]
-web = ["dep:leptos", "dep:wasm-bindgen-futures"]
+web = ["dep:leptos", "dep:wasm-bindgen-futures", "dep:gloo-timers"]
 default = ["server", "client", "cli"]
