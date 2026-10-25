@@ -163,7 +163,10 @@ fn Game(connection: ReadSignal<Option<Arc<HttpConnection>>>) -> impl IntoView {
                     />
                     <button type="submit" disabled=true>"Submit"</button>
                 }.into_any()
-            }
+            },
+            Event::TextDisplay { text } => view! {
+                <p>{text}</p>
+            }.into_any()
         }}
     }
 }

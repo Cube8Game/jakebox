@@ -151,7 +151,8 @@ impl FromLua for Player {
 pub enum Event {
     Waiting,
     TextPrompt { prompt: String },
-    TextPromptComplete { answer: String }
+    TextPromptComplete { answer: String },
+    TextDisplay { text: String }
 }
 
 #[cfg(feature = "host")]
@@ -169,6 +170,10 @@ impl IntoLua for Event {
             Self::TextPromptComplete { answer } => {
                 table.set("status", "text_prompt_complete")?;
                 table.set("answer", answer)?;
+            }
+            Self::TextDisplay { text } => {
+                table.set("status", "text_display")?;
+                table.set("text", text)?;
             }
         }
         Ok(mlua::Value::Table(table))
@@ -219,6 +224,17 @@ impl FromLua for Event {
                 })?;
 
                 Ok(Self::TextPromptComplete { answer })
+            }
+            "text_display" => {
+                let text: String = table.get("text").map_err(|_| {
+                    LuaError::FromLuaConversionError { 
+                        from: "Event", 
+                        to: "table".to_string(), 
+                        message: Some("Missing or invalid field 'answer'".to_string()) 
+                    }
+                })?;
+
+                Ok(Self::TextDisplay { text })
             }
             _ => {
                 Err(LuaError::FromLuaConversionError { 

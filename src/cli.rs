@@ -103,6 +103,9 @@ pub async fn start_cli() -> Result<()> {
                                 connection.send_action(GameAction::Client(ClientGameAction::SubmitText { text: answer })).await?;
                             }
                             Event::TextPromptComplete { answer: _ } => {}
+                            Event::TextDisplay { text } => {
+                                println!("{}", text);
+                            }
                         }
                         sleep(Duration::from_secs(2));
                     }
