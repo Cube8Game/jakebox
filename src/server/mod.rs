@@ -1,9 +1,8 @@
 use std::sync::Arc;
 
-use axum::{Json, Router, extract::{Path, State}, http::{Method, StatusCode}, routing::{get, post}};
+use axum::{Json, Router, extract::{Path, State}, http::{Method, StatusCode, header::CONTENT_TYPE}, routing::{get, post}};
 use dashmap::DashMap;
 use rand::RngExt;
-use reqwest::header::CONTENT_TYPE;
 use tower_http::cors::{Any, CorsLayer};
 
 use crate::common::{connection::{ClientGameAction, GameAction, GameRequest, HostGameAction}, state::{Event, GameState}};
