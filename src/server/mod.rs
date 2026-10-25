@@ -3,7 +3,9 @@ use std::sync::Arc;
 use axum::{Json, Router, extract::{Path, State}, http::{Method, StatusCode, header::CONTENT_TYPE}, routing::{get, post}};
 use dashmap::DashMap;
 use rand::RngExt;
-use tower_http::{cors::{Any, CorsLayer}, services::ServeDir};
+use tower_http::{cors::{Any, CorsLayer}};
+#[cfg(feature = "static-hosting")]
+use tower_http::services::ServeDir;
 
 use crate::common::{connection::{ClientGameAction, GameAction, GameRequest, HostGameAction}, state::{Event, GameState}};
 
