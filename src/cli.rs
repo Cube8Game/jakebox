@@ -15,7 +15,7 @@ use crate::server;
 #[cfg(feature = "client")]
 use crate::client::{connection::{common::Connection, http::HttpConnection}};
 #[cfg(feature = "host")]
-use crate::client::scripting;
+// use crate::client::scripting;
 
 #[derive(Parser)]
 struct Cli {
@@ -111,7 +111,7 @@ pub async fn start_cli() -> Result<()> {
                     }
                 }
                 #[cfg(feature = "host")]
-                ClientCommands::Host { url, username, command, script } => {
+                ClientCommands::Host { url, username, command, script: _ } => {
                     match command {
                         None => {
                             let url = match url {
