@@ -4,7 +4,13 @@ use gloo_timers::future::TimeoutFuture;
 use leptos::{html, logging::debug_log, prelude::*};
 use wasm_bindgen_futures::spawn_local;
 
-use crate::{client::connection::{common::Connection, http::HttpConnection}, common::{connection::{ClientGameAction, GameAction}, state::Event::{self, TextPromptComplete}}};
+use crate::{client::{connection::{common::Connection, http::HttpConnection}, scripting}, common::{connection::{ClientGameAction, GameAction}, state::Event::{self, TextPromptComplete}}};
+
+#[derive(Clone, Copy)]
+enum PlayMode {
+    Join,
+    Host
+}
 
 #[component]
 pub fn App() -> impl IntoView {
@@ -13,12 +19,15 @@ pub fn App() -> impl IntoView {
     );
 
     let (joined, set_joined) = signal(false);
+    let (hosting, set_hosting) = signal(false);
 
     let (connection, set_connection) = signal(None::<Arc<HttpConnection>>);
 
+    let (play_mode, set_play_mode) = signal(PlayMode::Join);
+
     let on_submit_join = move |game_id: String, username: String| {
         let server_ip = match server_ip.get() {
-            Some(game_id) => match game_id {
+            Some(ip) => match ip {
                 Some(ip) => ip,
                 None => {
                     return;
@@ -40,42 +49,159 @@ pub fn App() -> impl IntoView {
         });
     };
 
+    let on_submit_host = move |username: String| {
+        let server_ip = match server_ip.get() {
+            Some(ip) => match ip {
+                Some(ip) => ip,
+                None => {
+                    return;
+                }
+            },
+            None => {
+                return;
+            }
+        };
+        spawn_local(async move {
+            if let Ok(connection) = HttpConnection::host(
+                server_ip.to_string(),
+                username
+            ).await {
+                set_connection.set(Some(Arc::new(connection.clone())));
+                set_hosting.set(true);
+                spawn_local(async move {
+                    scripting::start_game(r#"
+local first_player = nil
+
+-- Wait until at least one player exists.
+while first_player == nil do
+    local state = jakebox.get_state()
+
+    for username, _ in pairs(state.players) do
+        first_player = username
+        break
+    end
+
+    if first_player == nil then
+        sleep(1)
+    end
+end
+
+local msgs = 0
+local last_msg = ""
+
+while true do
+    local state = jakebox.get_state()
+    local player = state.players[first_player]
+
+    if player ~= nil then
+        local event = player.event
+
+        if event.status == "text_prompt_complete" then
+            msgs = msgs + 1
+            last_msg = event.answer
+
+            local prompt =
+                "You just told me " .. last_msg ..
+                ". You have said " .. msgs ..
+                " things to me. Tell me something else."
+
+            state.players[first_player].event = {
+                status = "text_prompt",
+                prompt = prompt
+            }
+
+            sleep(1)
+            jakebox.set_state(state)
+        elseif event.status == "waiting" then
+            state.players[first_player].event = {
+                status = "text_prompt",
+                prompt = "Tell me something."
+            }
+
+            sleep(1)
+            jakebox.set_state(state)
+        end
+    end
+
+    sleep(1)
+end
+                    "#.to_string(), connection).await.unwrap();
+                })
+            };
+        });
+    };
+
     let join_code_input: NodeRef<html::Input> = NodeRef::new();
     let username_input: NodeRef<html::Input> = NodeRef::new();
 
     view! {
         <h1>"Jakebox"</h1>
         <Show
-            when=move || !joined.get()
-            fallback=move || view! { <Game connection=connection/> }
+            when=move || {!(joined.get() || hosting.get())}
+            fallback=move || if joined.get() {
+                view! { <Game connection=connection/> }.into_any()
+            } else {
+                view! { <HostScreen connection=connection/> }.into_any()
+            }
         >
-            <form on:submit=move |event| {
-                event.prevent_default();
-                let username = username_input
-                    .get()
-                    .expect("Input should be mounted")
-                    .value();
-                
-                let join_code = join_code_input
-                    .get()
-                    .expect("Input should be mounted")
-                    .value();
+            {match play_mode.get() {
+                PlayMode::Join => view! {
+                    <button on:click=move |_| {
+                        set_play_mode.set(PlayMode::Host)
+                    }>"Host Game"</button>
+                    <form on:submit=move |event| {
+                        event.prevent_default();
+                        let username = username_input
+                            .get()
+                            .expect("Input should be mounted")
+                            .value();
+                        
+                        let join_code = join_code_input
+                            .get()
+                            .expect("Input should be mounted")
+                            .value();
 
-                on_submit_join(join_code, username);
-            }>
-                <input
-                    node_ref=username_input
-                    type="text"
-                    placeholder="Username"
-                />
-                <input
-                    node_ref=join_code_input
-                    type="text"
-                    placeholder="Join Code"
-                />
+                        on_submit_join(join_code, username);
+                    }>
+                        <input
+                            node_ref=username_input
+                            type="text"
+                            placeholder="Username"
+                        />
+                        <input
+                            node_ref=join_code_input
+                            type="text"
+                            placeholder="Join Code"
+                        />
 
-                <button type="submit">"Join"</button>
-            </form>
+                        <button type="submit">"Join"</button>
+                    </form>
+                    <p>{if joined.get() {"Joining..."} else {""}}</p>
+                }.into_any(),
+                PlayMode::Host => view! {
+                    <button on:click=move |_| {
+                        set_play_mode.set(PlayMode::Join)
+                    }>"Join Game"</button>
+                    <form on:submit=move |event| {
+                        event.prevent_default();
+                        let username = username_input
+                            .get()
+                            .expect("Input should be mounted")
+                            .value();
+
+                        on_submit_host(username);
+                    }>
+                        <input
+                            node_ref=username_input
+                            type="text"
+                            placeholder="Username"
+                        />
+
+                        <button type="submit">"Join"</button>
+                    </form>
+                    <p>{if joined.get() {"Joining..."} else {""}}</p>
+                }.into_any()
+            }}
             <p>"Server IP: " {
                 move || match server_ip.get() {
                     None => "Searching...".to_string(),
@@ -83,7 +209,6 @@ pub fn App() -> impl IntoView {
                     Some(Some(ip)) => ip,
                 }
             }</p>
-            <p>{if joined.get() {"Joining..."} else {""}}</p>
         </Show>
     }
 }
@@ -168,5 +293,12 @@ fn Game(connection: ReadSignal<Option<Arc<HttpConnection>>>) -> impl IntoView {
                 <p>{text}</p>
             }.into_any()
         }}
+    }
+}
+
+#[component]
+fn HostScreen(connection: ReadSignal<Option<Arc<HttpConnection>>>) -> impl IntoView {
+    view! {
+        <p>"This tab is currently hosting the example game. Go to another tab and join with code " {connection.get().unwrap().game_id.clone()} "."</p>
     }
 }

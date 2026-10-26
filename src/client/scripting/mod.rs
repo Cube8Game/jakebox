@@ -1,7 +1,10 @@
-use std::{path::PathBuf, time::Duration};
+use std::time::Duration;
 
 use luaur::prelude::*;
+#[cfg(not(target_arch = "wasm32"))]
 use tokio::time::sleep;
+#[cfg(target_arch = "wasm32")]
+use gloo_timers::future::sleep;
 
 use crate::{client::connection::{common::Connection, http::HttpConnection}, common::{connection::{GameAction, HostGameAction}, state::GameState}};
 
@@ -39,13 +42,11 @@ fn lua_print(_lua: &Lua, text: String) -> LuaResult<()> {
     Ok(())
 }
 
-pub async fn start_game(game: PathBuf, connection: HttpConnection) -> Result<()> {
+pub async fn start_game(game: String, connection: HttpConnection) -> Result<()> {
     let lua = Lua::new();
     lua.set_app_data(connection);
     
     lua.sandbox(true)?;
-
-    let script = std::fs::read_to_string(game)?;
 
     // Load Jakebox API to Lua state
     
@@ -73,7 +74,7 @@ pub async fn start_game(game: PathBuf, connection: HttpConnection) -> Result<()>
         lua.create_function(lua_print).unwrap()
     ).unwrap();
 
-    lua.load(&script).exec_async().await?;
+    lua.load(&game).exec_async().await?;
 
     Ok(())
 }

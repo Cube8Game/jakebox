@@ -14,7 +14,7 @@ pub enum Error {
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct HttpConnection {
     client: reqwest::Client,
     pub server_ip: String, // TODO: Add some validation for the server IP.

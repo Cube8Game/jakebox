@@ -122,10 +122,11 @@ pub async fn start_cli() -> Result<()> {
                             };
                             let connection = HttpConnection::host(url, username).await?;
                             println!("Connection Successful. Join code is {}", connection.game_id);
-                            if let Some(script) = script {
-                                scripting::start_game(script, connection).await
-                                    .map_err(|e| anyhow::anyhow!(e.to_string()))?
-                            }
+                            // TODO: Re-enable CLI scripts
+                            // if let Some(script) = script {
+                            //     scripting::start_game(script, connection).await
+                            //         .map_err(|e| anyhow::anyhow!(e.to_string()))?
+                            // }
                             Ok(())
                         }
                         Some(HostCommands::StartPrompt { prompt, join_code }) => {
