@@ -14,7 +14,7 @@ use crate::common::connection::HostGameAction;
 use crate::server;
 #[cfg(feature = "client")]
 use crate::client::{connection::{common::Connection, http::HttpConnection}};
-#[cfg(feature = "host")]
+// #[cfg(feature = "host")]
 // use crate::client::scripting;
 
 #[derive(Parser)]
