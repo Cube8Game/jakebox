@@ -1,6 +1,6 @@
 use std::{path::PathBuf, time::Duration};
 
-use mlua::prelude::*;
+use luaur::prelude::*;
 use tokio::time::sleep;
 
 use crate::{client::connection::{common::Connection, http::HttpConnection}, common::{connection::{GameAction, HostGameAction}, state::GameState}};
@@ -8,7 +8,7 @@ use crate::{client::connection::{common::Connection, http::HttpConnection}, comm
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("Lua error: {0}")]
-    LuaError(#[from] mlua::error::Error),
+    LuaError(#[from] luaur::Error),
 
     #[error("IO error: {0}")]
     IoError(#[from] std::io::Error)
@@ -18,14 +18,14 @@ type Result<T> = std::result::Result<T, Error>;
 
 async fn lua_get_state(lua: Lua, _: ()) -> LuaResult<GameState> {
     let connection = lua.app_data_ref::<HttpConnection>().expect("Connection not provided by Lua state.");
-    connection.get_state().await.map_err(mlua::Error::external)
+    connection.get_state().await.map_err(luaur::Error::external)
 }
 
 async fn lua_set_state(lua: Lua, new_state: GameState) -> LuaResult<()> {
     let connection = lua.app_data_ref::<HttpConnection>().expect("Connection not provided by Lua state.");
     connection.send_action(GameAction::Host(HostGameAction::UpdatePlayerMap {
         new_map: new_state.get_players().values().cloned().collect()
-    })).await.map_err(mlua::Error::external)?;
+    })).await.map_err(luaur::Error::external)?;
     Ok(())
 }
 
@@ -49,7 +49,7 @@ pub async fn start_game(game: PathBuf, connection: HttpConnection) -> Result<()>
 
     // Load Jakebox API to Lua state
     
-    let api = lua.create_table()?;
+    let api = lua.create_table();
     
     api.set(
         "get_state",

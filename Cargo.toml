@@ -10,7 +10,7 @@ clap = { version = "4.6.7", features = ["derive"], optional = true }
 dashmap = { version = "6.2.1", optional = true }
 gloo-timers = { version = "0.4.0", features = ["futures"], optional = true }
 leptos = { version = "0.8.22", features = ["csr"], optional = true }
-mlua = { version = "0.12.2", features = ["luau", "async", "serde", "vendored", "macros"], optional = true }
+luaur = { version = "0.1.8", features = ["async", "serde", "macros"], optional = true }
 rand = { version = "0.10.3", optional = true }
 reqwest = { version = "0.13.5", features = ["json"], optional = true }
 serde = { version = "1.0.229", features = ["derive"] }
@@ -26,7 +26,7 @@ tokio = { version = "1.53.3", features = ["macros", "rt"] }
 [features]
 server = ["dep:dashmap", "dep:rand", "dep:axum", "dep:tower-http"]
 client = ["dep:reqwest", "dep:thiserror"]
-host = ["client", "dep:mlua"]
+host = ["client", "dep:luaur"]
 cli = ["dep:clap"]
 web = ["dep:leptos", "dep:wasm-bindgen-futures", "dep:gloo-timers"]
 static-hosting = ["server"]

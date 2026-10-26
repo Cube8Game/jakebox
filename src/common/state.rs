@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 #[cfg(feature = "host")]
-use mlua::prelude::*;
+use luaur::prelude::*;
 use serde::{Serialize, Deserialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -51,10 +51,10 @@ impl GameState {
 
 #[cfg(feature = "host")]
 impl IntoLua for GameState {
-    fn into_lua(self, lua: &mlua::prelude::Lua) -> LuaResult<mlua::prelude::LuaValue> {
-        let table = lua.create_table()?;
+    fn into_lua(self, lua: &Lua) -> LuaResult<LuaValue> {
+        let table = lua.create_table();
         table.set("players", self.players)?;
-        Ok(mlua::Value::Table(table))
+        Ok(luaur::Value::Table(table))
     }
 }
 
@@ -108,11 +108,11 @@ impl Player {
 
 #[cfg(feature = "host")]
 impl IntoLua for Player {
-    fn into_lua(self, lua: &mlua::prelude::Lua) -> LuaResult<mlua::prelude::LuaValue> {
-        let table = lua.create_table()?;
+    fn into_lua(self, lua: &Lua) -> LuaResult<LuaValue> {
+        let table = lua.create_table();
         table.set("username", self.username)?;
         table.set("event", self.event)?;
-        Ok(mlua::Value::Table(table))
+        Ok(luaur::Value::Table(table))
     }
 }
 
@@ -157,8 +157,8 @@ pub enum Event {
 
 #[cfg(feature = "host")]
 impl IntoLua for Event {
-    fn into_lua(self, lua: &mlua::prelude::Lua) -> LuaResult<mlua::prelude::LuaValue> {
-        let table = lua.create_table()?;
+    fn into_lua(self, lua: &Lua) -> LuaResult<LuaValue> {
+        let table = lua.create_table();
         match self {
             Self::Waiting => {
                 table.set("status", "waiting")?;
@@ -176,7 +176,7 @@ impl IntoLua for Event {
                 table.set("text", text)?;
             }
         }
-        Ok(mlua::Value::Table(table))
+        Ok(luaur::Value::Table(table))
     }
 }
 
