@@ -23,14 +23,20 @@ impl GameState {
         self.players.insert(username.clone(), Player::new(username));
     }
 
-    pub fn get_player_event(&self, username: &str) -> Event {
-        assert!(self.players.contains_key(username));
-        self.players.get(username).unwrap().event.clone()
+    pub fn get_player_event(&self, username: &str) -> Option<&Event> {
+        Some(&self.players.get(username)?.event)
     }
     
-    pub fn set_player_event(&mut self, username: &str, new_value: Event) {
-        assert!(self.players.contains_key(username));
-        self.players.get_mut(username).unwrap().event = new_value;
+    pub fn set_player_event(&mut self, username: &str, new_value: Event) -> bool {
+        match self.players.get_mut(username) {
+            Some(player) => {
+                player.event = new_value;
+            }
+            None => {
+                return false;
+            }
+        }
+        true
     }
 
     pub fn update_player_map(&mut self, players: Vec<Player>) {

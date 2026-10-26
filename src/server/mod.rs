@@ -116,7 +116,7 @@ async fn post_game(State(state): State<AppState>, Json(request): Json<GameReques
 
 async fn get_event(State(state): State<AppState>, Path(id): Path<String>, Json(request): Json<GameRequest>) -> Result<Json<Event>, StatusCode> {
     if let Some(game) = state.games.get(&id) {
-        Ok(Json(game.value().get_player_event(&request.username)))
+        Ok(Json(game.value().get_player_event(&request.username).ok_or_else(|| {StatusCode::NOT_FOUND})?.clone()))
     } else {
         Err(StatusCode::NOT_FOUND)
     }
@@ -141,8 +141,10 @@ async fn action(State(state): State<AppState>, Path(id): Path<String>, Json(requ
                 GameAction::Client(client_action) => {
                     match client_action {
                         ClientGameAction::SubmitText { text } => {
-                            if let Event::TextPrompt { prompt: _ } = game.get_player_event(&request.username) {
-                                game.set_player_event(&request.username, Event::TextPromptComplete { answer: text });
+                            if let Event::TextPrompt { prompt: _ } = game.get_player_event(&request.username).ok_or(StatusCode::NOT_FOUND)? {
+                                if !game.set_player_event(&request.username, Event::TextPromptComplete { answer: text }) {
+                                    return Err(StatusCode::NOT_FOUND);
+                                }
                             } else {
                                 return Err(StatusCode::CONFLICT);
                             }
