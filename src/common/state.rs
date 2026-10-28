@@ -69,16 +69,16 @@ impl FromLua for GameState {
     fn from_lua(value: LuaValue, _lua: &Lua) -> LuaResult<Self> {
         let table = value.as_table().ok_or_else(|| {
             LuaError::FromLuaConversionError { 
-                from: "GameState", 
-                to: "table".to_string(), 
+                from: "table", 
+                to: "GameState".to_string(), 
                 message: Some("Expected a table".to_string()) 
             }
         })?;
         
         let players: HashMap<String, Player> = table.get("players").map_err(|_| {
             LuaError::FromLuaConversionError { 
-                from: "GameState", 
-                to: "table".to_string(), 
+                from: "table", 
+                to: "GameState".to_string(), 
                 message: Some("Missing or invalid field 'players'".to_string()) 
             }
         })?;
@@ -127,24 +127,24 @@ impl FromLua for Player {
     fn from_lua(value: LuaValue, _lua: &Lua) -> LuaResult<Self> {
         let table = value.as_table().ok_or_else(|| {
             LuaError::FromLuaConversionError { 
-                from: "Player", 
-                to: "table".to_string(), 
+                from: "table", 
+                to: "Player".to_string(), 
                 message: Some("Expected a table".to_string()) 
             }
         })?;
         
         let username: String = table.get("username").map_err(|_| {
             LuaError::FromLuaConversionError { 
-                from: "Player", 
-                to: "table".to_string(), 
+                from: "table", 
+                to: "Player".to_string(), 
                 message: Some("Missing or invalid field 'username'".to_string()) 
             }
         })?;
         
         let event: Event = table.get("event").map_err(|_| {
             LuaError::FromLuaConversionError { 
-                from: "Player", 
-                to: "table".to_string(), 
+                from: "table", 
+                to: "Player".to_string(), 
                 message: Some("Missing or invalid field 'event'".to_string()) 
             }
         })?;
@@ -191,16 +191,16 @@ impl FromLua for Event {
     fn from_lua(value: LuaValue, _lua: &Lua) -> LuaResult<Self> {
         let table = value.as_table().ok_or_else(|| {
             LuaError::FromLuaConversionError { 
-                from: "Event", 
-                to: "table".to_string(), 
+                from: "table", 
+                to: "Event".to_string(), 
                 message: Some("Expected a table".to_string()) 
             }
         })?;
         
         let status: String = table.get("status").map_err(|_| {
             LuaError::FromLuaConversionError { 
-                from: "Event", 
-                to: "table".to_string(), 
+                from: "table", 
+                to: "Event".to_string(), 
                 message: Some("Missing or invalid field 'status'".to_string()) 
             }
         })?;
@@ -212,8 +212,8 @@ impl FromLua for Event {
             "text_prompt" => {
                 let prompt: String = table.get("prompt").map_err(|_| {
                     LuaError::FromLuaConversionError { 
-                        from: "Event", 
-                        to: "table".to_string(), 
+                        from: "table", 
+                        to: "Event".to_string(), 
                         message: Some("Missing or invalid field 'prompt'".to_string()) 
                     }
                 })?;
@@ -223,8 +223,8 @@ impl FromLua for Event {
             "text_prompt_complete" => {
                 let answer: String = table.get("answer").map_err(|_| {
                     LuaError::FromLuaConversionError { 
-                        from: "Event", 
-                        to: "table".to_string(), 
+                        from: "table", 
+                        to: "Event".to_string(), 
                         message: Some("Missing or invalid field 'answer'".to_string()) 
                     }
                 })?;
@@ -234,8 +234,8 @@ impl FromLua for Event {
             "text_display" => {
                 let text: String = table.get("text").map_err(|_| {
                     LuaError::FromLuaConversionError { 
-                        from: "Event", 
-                        to: "table".to_string(), 
+                        from: "table", 
+                        to: "Event".to_string(), 
                         message: Some("Missing or invalid field 'answer'".to_string()) 
                     }
                 })?;
@@ -244,8 +244,8 @@ impl FromLua for Event {
             }
             _ => {
                 Err(LuaError::FromLuaConversionError { 
-                    from: "Event", 
-                    to: "table".to_string(), 
+                    from: "table", 
+                    to: "Event".to_string(), 
                     message: Some(format!("Invalid status '{}'", status)) 
                 })
             }
