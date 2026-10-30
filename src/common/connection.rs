@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::common::state::Player;
+use super::state::{EventData, Player};
 
 #[derive(Serialize, Deserialize)]
 pub struct GameRequest {
@@ -22,7 +22,7 @@ pub enum GameAction {
 
 #[derive(Serialize, Deserialize)]
 pub enum ClientGameAction {
-    SubmitText { text: String }
+    SubmitEventData { key: String, data: EventData }
 }
 
 #[derive(Serialize, Deserialize)]

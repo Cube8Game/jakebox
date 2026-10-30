@@ -91,12 +91,13 @@ fn generate_join_code() -> String {
 async fn join(State(state): State<AppState>, Path(id): Path<String>, Json(request): Json<GameRequest>) -> Result<(), StatusCode> {
     if let Some(mut pair) = state.games.get_mut(&id) {
         let game = pair.value_mut();
-        if game.get_players().contains_key(&request.username) {
+        if game.add_player(request.username).is_err() {
+            println!("conflict joining");
             return Err(StatusCode::CONFLICT)
         }
-        game.add_player(request.username);
         Ok(())
     } else {
+        println!("game not found");
         Err(StatusCode::NOT_FOUND)
     }
 }
@@ -140,14 +141,14 @@ async fn action(State(state): State<AppState>, Path(id): Path<String>, Json(requ
             match action {
                 GameAction::Client(client_action) => {
                     match client_action {
-                        ClientGameAction::SubmitText { text } => {
-                            if let Event::TextPrompt { prompt: _ } = game.get_player_event(&request.username).ok_or(StatusCode::NOT_FOUND)? {
-                                if !game.set_player_event(&request.username, Event::TextPromptComplete { answer: text }) {
+                        ClientGameAction::SubmitEventData { key, data } => {
+                            let event_data = match game.get_player_event_mut(&request.username) {
+                                Some(d) => d,
+                                None => {
                                     return Err(StatusCode::NOT_FOUND);
                                 }
-                            } else {
-                                return Err(StatusCode::CONFLICT);
-                            }
+                            };
+                            event_data.data.insert(key, data);
                         }
                     }
                 }

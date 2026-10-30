@@ -4,7 +4,7 @@ use gloo_timers::future::TimeoutFuture;
 use leptos::{html, logging::debug_log, prelude::*};
 use wasm_bindgen_futures::spawn_local;
 
-use crate::{client::{connection::{common::Connection, http::HttpConnection}, scripting}, common::{connection::{ClientGameAction, GameAction}, state::Event::{self, TextPromptComplete}}};
+use crate::{client::{connection::{common::Connection, http::HttpConnection}, scripting}, common::{connection::{ClientGameAction, GameAction}, state::{Event, EventData, UiElement}}};
 
 #[derive(Clone, Copy)]
 enum PlayMode {
@@ -70,60 +70,32 @@ pub fn App() -> impl IntoView {
                 set_hosting.set(true);
                 spawn_local(async move {
                     scripting::start_game(r#"
-local first_player = nil
-
--- Wait until at least one player exists.
-while first_player == nil do
-    local state = jakebox.get_state()
-
-    for username, _ in pairs(state.players) do
-        first_player = username
-        break
-    end
-
-    if first_player == nil then
-        sleep(1)
-    end
-end
-
-local msgs = 0
-local last_msg = ""
-
 while true do
     local state = jakebox.get_state()
-    local player = state.players[first_player]
-
-    if player ~= nil then
-        local event = player.event
-
-        if event.status == "text_prompt_complete" then
-            msgs = msgs + 1
-            last_msg = event.answer
-
-            local prompt =
-                "You just told me " .. last_msg ..
-                ". You have said " .. msgs ..
-                " things to me. Tell me something else."
-
-            state.players[first_player].event = {
-                status = "text_prompt",
-                prompt = prompt
+    for _, player in pairs(state.players) do
+        if #player.event.ui == 0 then
+            player.event.ui = {
+                {
+                    type = "text",
+                    content = "Does it work?"
+                },
+                {
+                    type = "text_input",
+                    key = "answer",
+                    placeholder = "Type an answer..."
+                }
             }
-
-            sleep(1)
-            jakebox.set_state(state)
-        elseif event.status == "waiting" then
-            state.players[first_player].event = {
-                status = "text_prompt",
-                prompt = "Tell me something."
+        elseif player.event.data.answer == "yes" then
+            player.event.ui = {
+                {
+                    type = "text",
+                    content = "Yay!!!"
+                }
             }
-
-            sleep(1)
-            jakebox.set_state(state)
         end
     end
-
-    sleep(1)
+    jakebox.set_state(state)
+    sleep(2)
 end
                     "#.to_string(), connection).await.unwrap();
                 })
@@ -215,8 +187,7 @@ end
 
 #[component]
 fn Game(connection: ReadSignal<Option<Arc<HttpConnection>>>) -> impl IntoView {
-    let (event, set_event) = signal(Event::Waiting);
-    let (disable_prompt_input, set_disable_prompt_input) = signal(false);
+    let (event, set_event) = signal(Event::new());
 
     Effect::new(move |_| {
         let connection = Arc::clone(match &connection.get() {
@@ -244,55 +215,42 @@ fn Game(connection: ReadSignal<Option<Arc<HttpConnection>>>) -> impl IntoView {
         });
     });
 
-    let prompt_input: NodeRef<html::Input> = NodeRef::new();
-
     view! {
         <h1>"Game"</h1>
-        {move || match event.get() {
-            Event::Waiting => view! {
-                <p>"Waiting for host to start event..."</p>
-            }.into_any(),
-            Event::TextPrompt { prompt } => view! {
-                <form on:submit=move |event| {
-                    event.prevent_default();
-                    let response = prompt_input
-                        .get()
-                        .expect("Input should be mounted")
-                        .value();
+        <For
+            each=move || {event.get().ui}
+            key=|element| element.clone()
+            children=move |element| {
+                match element {
+                    UiElement::Text(s) => view! {
+                        {s}
+                    }.into_any(),
+                    UiElement::TextInput { key, placeholder } => {
+                        let (response, set_response) = signal(String::new());
 
-                    set_disable_prompt_input.set(true);
-                    
-                    spawn_local(async move {connection.get().unwrap().send_action(
-                        GameAction::Client(ClientGameAction::SubmitText { text: response })
-                    ).await.unwrap();});
-                }>
-                    <p>{ prompt }</p>
-                    <input
-                        node_ref=prompt_input
-                        type="text"
-                        placeholder="Type your response..."
-                        disabled={ disable_prompt_input.get() }
-                    />
-                    <button type="submit">"Submit"</button>
-                </form>
-            }.into_any(),
-            TextPromptComplete { answer } => {
-                set_disable_prompt_input.set(false);
-                view! {
-                    <input
-                        node_ref=prompt_input
-                        type="text"
-                        placeholder="Type your response..."
-                        disabled=true
-                        value={ answer }
-                    />
-                    <button type="submit" disabled=true>"Submit"</button>
-                }.into_any()
-            },
-            Event::TextDisplay { text } => view! {
-                <p>{text}</p>
-            }.into_any()
-        }}
+                        view! {
+                            <form on:submit=move |event| {
+                                event.prevent_default();
+                                let key = key.clone();
+                                let data = EventData::Text(response.get());
+                                spawn_local(async move {connection.get().unwrap().send_action(
+                                    GameAction::Client(ClientGameAction::SubmitEventData { key, data })
+                                ).await.unwrap();});
+                            }>
+                                <input
+                                    type="text"
+                                    placeholder={placeholder}
+                                    prop:value=move || response.get()
+                                    on:input=move |event| {
+                                        set_response.set(event_target_value(&event))
+                                    }
+                                />
+                            </form>
+                        }.into_any()
+                    }
+                }
+            }
+        />
     }
 }
 

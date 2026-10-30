@@ -94,19 +94,7 @@ pub async fn start_cli() -> Result<()> {
                     println!("Connection Successful.");
                     loop {
                         let event = connection.get_event().await?;
-                        match event {
-                            Event::Waiting => {}
-                            Event::TextPrompt { prompt } => {
-                                println!("{}", prompt);
-                                let mut answer = String::new();
-                                stdin().read_line(&mut answer)?;
-                                connection.send_action(GameAction::Client(ClientGameAction::SubmitText { text: answer })).await?;
-                            }
-                            Event::TextPromptComplete { answer: _ } => {}
-                            Event::TextDisplay { text } => {
-                                println!("{}", text);
-                            }
-                        }
+                        todo!();
                         sleep(Duration::from_secs(2));
                     }
                 }
@@ -129,7 +117,7 @@ pub async fn start_cli() -> Result<()> {
                             // }
                             Ok(())
                         }
-                        Some(HostCommands::StartPrompt { prompt, join_code }) => {
+                        Some(HostCommands::StartPrompt { prompt: _, join_code }) => {
                             let url = match url {
                                 Some(url) => url,
                                 None => HttpConnection::find_server().await.ok_or_else(
@@ -139,13 +127,7 @@ pub async fn start_cli() -> Result<()> {
                             let connection = HttpConnection::new(url, join_code, username);
                             let state = connection.get_state().await?;
                             println!("{:?}", state);
-                            let mut new_map = Vec::new();
-                            for player in state.get_players().values() {
-                                new_map.push(player.with_event(Event::TextPrompt { prompt: prompt.clone() }));
-                            }
-                            connection.send_action(GameAction::Host(HostGameAction::UpdatePlayerMap { new_map })).await?;
-                            println!("Successfully sent player map update.");
-                            Ok(())
+                            todo!()
                         }
                     }
                 }
