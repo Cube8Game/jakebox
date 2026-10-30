@@ -4,7 +4,6 @@ Jakebox is a game engine where you can make multiplayer (or singleplayer) text-b
 
 ## Planned Features
 
-- [X]  CLI
 - [X]  Web GUI
 - [X]  Lua scripting
 - [X]  Official hosting
