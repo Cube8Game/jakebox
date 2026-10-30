@@ -27,5 +27,5 @@ pub enum ClientGameAction {
 
 #[derive(Serialize, Deserialize)]
 pub enum HostGameAction {
-    UpdatePlayerMap { new_map: Vec<Player> }
+    ForcePlayerMap { new_map: Vec<Player> }
 }

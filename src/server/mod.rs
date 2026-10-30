@@ -92,12 +92,10 @@ async fn join(State(state): State<AppState>, Path(id): Path<String>, Json(reques
     if let Some(mut pair) = state.games.get_mut(&id) {
         let game = pair.value_mut();
         if game.add_player(request.username).is_err() {
-            println!("conflict joining");
             return Err(StatusCode::CONFLICT)
         }
         Ok(())
     } else {
-        println!("game not found");
         Err(StatusCode::NOT_FOUND)
     }
 }
@@ -157,7 +155,7 @@ async fn action(State(state): State<AppState>, Path(id): Path<String>, Json(requ
                         return Err(StatusCode::FORBIDDEN);
                     }
                     match host_action {
-                        HostGameAction::UpdatePlayerMap { new_map } => {
+                        HostGameAction::ForcePlayerMap { new_map } => {
                             game.update_player_map(new_map);
                         }
                     }

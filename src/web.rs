@@ -94,7 +94,7 @@ while true do
             }
         end
     end
-    jakebox.set_state(state)
+    jakebox.force_state(state)
     sleep(2)
 end
                     "#.to_string(), connection).await.unwrap();

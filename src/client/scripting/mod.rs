@@ -24,9 +24,9 @@ async fn lua_get_state(lua: Lua, _: ()) -> LuaResult<GameState> {
     connection.get_state().await.map_err(luaur::Error::external)
 }
 
-async fn lua_set_state(lua: Lua, new_state: GameState) -> LuaResult<()> {
+async fn lua_force_state(lua: Lua, new_state: GameState) -> LuaResult<()> {
     let connection = lua.app_data_ref::<HttpConnection>().expect("Connection not provided by Lua state.");
-    connection.send_action(GameAction::Host(HostGameAction::UpdatePlayerMap {
+    connection.send_action(GameAction::Host(HostGameAction::ForcePlayerMap {
         new_map: new_state.get_players().values().cloned().collect()
     })).await.map_err(luaur::Error::external)?;
     Ok(())
@@ -58,8 +58,8 @@ pub async fn start_game(game: String, connection: HttpConnection) -> Result<()> 
     )?;
     
     api.set(
-        "set_state",
-        lua.create_async_function(lua_set_state).unwrap()
+        "force_state",
+        lua.create_async_function(lua_force_state).unwrap()
     )?;
 
     lua.globals().set("jakebox", api).unwrap();
