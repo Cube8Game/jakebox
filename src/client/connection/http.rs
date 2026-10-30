@@ -23,7 +23,8 @@ pub struct HttpConnection {
 }
 
 impl HttpConnection {
-    const SERVER_LIST: [&'static str; 2] = [
+    const SERVER_LIST: [&'static str; 3] = [
+        "http://localhost:3000",
         "https://box.jakewhibley.org",
         "https://jakebox.tunnl.gg", // Backup server
     ];
