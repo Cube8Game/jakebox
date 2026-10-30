@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::common::state::UiElement;
+
 use super::state::{EventData, Player};
 
 #[derive(Serialize, Deserialize)]
@@ -27,5 +29,6 @@ pub enum ClientGameAction {
 
 #[derive(Serialize, Deserialize)]
 pub enum HostGameAction {
-    ForcePlayerMap { new_map: Vec<Player> }
+    ForcePlayerMap { new_map: Vec<Player> },
+    UpdatePlayerUi { username: String, new_ui: Vec<UiElement> }
 }

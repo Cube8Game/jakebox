@@ -158,6 +158,16 @@ async fn action(State(state): State<AppState>, Path(id): Path<String>, Json(requ
                         HostGameAction::ForcePlayerMap { new_map } => {
                             game.update_player_map(new_map);
                         }
+                        HostGameAction::UpdatePlayerUi { username, new_ui } => {
+                            match game.get_player_event_mut(&username) {
+                                Some(event) => {
+                                    event.set_ui(new_ui);
+                                }
+                                None => {
+                                    return Err(StatusCode::NOT_FOUND)
+                                }
+                            }
+                        }
                     }
                 }
             }

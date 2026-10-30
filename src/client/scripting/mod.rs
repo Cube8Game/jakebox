@@ -6,7 +6,7 @@ use tokio::time::sleep;
 #[cfg(target_arch = "wasm32")]
 use gloo_timers::future::sleep;
 
-use crate::{client::connection::{common::Connection, http::HttpConnection}, common::{connection::{GameAction, HostGameAction}, state::GameState}};
+use crate::{client::connection::{common::Connection, http::HttpConnection}, common::{connection::{GameAction, HostGameAction}, state::{GameState, UiElement}}};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -29,6 +29,12 @@ async fn lua_force_state(lua: Lua, new_state: GameState) -> LuaResult<()> {
     connection.send_action(GameAction::Host(HostGameAction::ForcePlayerMap {
         new_map: new_state.get_players().values().cloned().collect()
     })).await.map_err(luaur::Error::external)?;
+    Ok(())
+}
+
+async fn lua_update_ui(lua: Lua, (username, new_ui): (String, Vec<UiElement>)) -> LuaResult<()> {
+    let connection = lua.app_data_ref::<HttpConnection>().expect("Connection not provided by Lua state.");
+    connection.send_action(GameAction::Host(HostGameAction::UpdatePlayerUi { username, new_ui })).await.map_err(luaur::Error::external)?;
     Ok(())
 }
 
@@ -60,6 +66,11 @@ pub async fn start_game(game: String, connection: HttpConnection) -> Result<()> 
     api.set(
         "force_state",
         lua.create_async_function(lua_force_state).unwrap()
+    )?;
+    
+    api.set(
+        "update_ui",
+        lua.create_async_function(lua_update_ui).unwrap()
     )?;
 
     lua.globals().set("jakebox", api).unwrap();

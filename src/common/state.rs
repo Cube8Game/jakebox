@@ -173,6 +173,10 @@ impl Event {
             data: HashMap::new()
         }
     }
+
+    pub fn set_ui(&mut self, new_ui: Vec<UiElement>) {
+        self.ui = new_ui;
+    }
 }
 
 #[cfg(feature = "host")]

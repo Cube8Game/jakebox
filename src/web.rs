@@ -74,7 +74,7 @@ while true do
     local state = jakebox.get_state()
     for _, player in pairs(state.players) do
         if #player.event.ui == 0 then
-            player.event.ui = {
+            jakebox.update_ui(player.username, {
                 {
                     type = "text",
                     content = "Does it work?"
@@ -84,17 +84,16 @@ while true do
                     key = "answer",
                     placeholder = "Type an answer..."
                 }
-            }
+            })
         elseif player.event.data.answer == "yes" then
-            player.event.ui = {
+            jakebox.update_ui(player.username, {
                 {
                     type = "text",
                     content = "Yay!!!"
                 }
-            }
+            })
         end
     end
-    jakebox.force_state(state)
     sleep(2)
 end
                     "#.to_string(), connection).await.unwrap();
