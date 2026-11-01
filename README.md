@@ -24,6 +24,14 @@ If you want to host the game session, go to the website and click "Host". Then, 
 
 I love Jackbox, but I hate proprietary software and games that are hard or impossible to mod, so I made an engine that makes it easier to make these kinds of multiplayer games.
 
+## How I made this
+
+The game uses Axum for the server (both the API and the site hosting), and it uses Leptos for the web client. The engine uses Lua through [luaur](https://pjankiewicz.github.io/luaur/).
+
+### AI coding tools used
+
+[This](https://en.wikipedia.org/wiki/Human_brain) is my favourite AI coding tool. It rarely ever halloucinates, and it's free! (No AI code is present in the repo)
+
 ## Games
 
 There is only one official game so far. It is called Adventure.
