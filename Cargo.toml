@@ -14,6 +14,7 @@ luaur = { version = "0.1.8", features = ["async", "serde", "macros"], optional =
 rand = { version = "0.10.3", optional = true }
 reqwest = { version = "0.13.5", features = ["json"], optional = true }
 serde = { version = "1.0.229", features = ["derive"] }
+serde_json = { version = "1.0.154", optional = true }
 thiserror = { version = "2.0.21", optional = true }
 tower-http = { version = "0.7.1", optional = true, features = ["cors", "fs"] }
 tracing = "0.1.44"
@@ -27,7 +28,7 @@ tokio = { version = "1.53.3", features = ["macros", "rt"] }
 [features]
 server = ["dep:dashmap", "dep:rand", "dep:axum", "dep:tower-http"]
 client = ["dep:reqwest", "dep:thiserror"]
-host = ["client", "dep:luaur"]
+host = ["client", "dep:luaur", "dep:serde_json"]
 cli = ["dep:clap"]
 web = ["dep:leptos", "dep:wasm-bindgen-futures", "dep:gloo-timers"]
 static-hosting = ["server"]

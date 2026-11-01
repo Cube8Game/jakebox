@@ -4,7 +4,7 @@ use gloo_timers::future::TimeoutFuture;
 use leptos::{html, logging::debug_log, prelude::*};
 use wasm_bindgen_futures::spawn_local;
 
-use crate::{client::{connection::{common::Connection, http::HttpConnection}, scripting}, common::{connection::{ClientGameAction, GameAction}, state::{Event, EventData, UiElement}}};
+use crate::{client::{connection::{common::Connection, http::HttpConnection}, game_search::Game, scripting}, common::{connection::{ClientGameAction, GameAction}, state::{Event, EventData, UiElement}}};
 
 #[derive(Clone, Copy)]
 enum PlayMode {
@@ -24,6 +24,24 @@ pub fn App() -> impl IntoView {
     let (connection, set_connection) = signal(None::<Arc<HttpConnection>>);
 
     let (play_mode, set_play_mode) = signal(PlayMode::Join);
+
+    let (custom_script, set_custom_script) = signal(false);
+    let (script, set_script) = signal(None::<String>);
+    let (games, set_games) = signal(None::<Vec<Game>>);
+
+    Effect::new(move || {
+        spawn_local(async move {
+            loop {
+                debug_log!("Getting games list");
+                let games = Game::get_all().await;
+                if games.is_some() {
+                    set_games.set(games);
+                    break;
+                }
+                TimeoutFuture::new(2000).await;
+            }
+        });
+    });
 
     let on_submit_join = move |game_id: String, username: String| {
         let server_ip = match server_ip.get() {
@@ -61,6 +79,12 @@ pub fn App() -> impl IntoView {
                 return;
             }
         };
+        let script = match script.get() {
+            Some(s) => s,
+            None => {
+                return;
+            }
+        };
         spawn_local(async move {
             if let Ok(connection) = HttpConnection::host(
                 server_ip.to_string(),
@@ -69,34 +93,7 @@ pub fn App() -> impl IntoView {
                 set_connection.set(Some(Arc::new(connection.clone())));
                 set_hosting.set(true);
                 spawn_local(async move {
-                    scripting::start_game(r#"
-while true do
-    local state = jakebox.get_state()
-    for _, player in pairs(state.players) do
-        if #player.event.ui == 0 then
-            jakebox.update_ui(player.username, {
-                {
-                    type = "text",
-                    content = "Does it work?"
-                },
-                {
-                    type = "text_input",
-                    key = "answer",
-                    placeholder = "Type an answer..."
-                }
-            })
-        elseif player.event.data.answer == "yes" then
-            jakebox.update_ui(player.username, {
-                {
-                    type = "text",
-                    content = "Yay!!!"
-                }
-            })
-        end
-    end
-    sleep(2)
-end
-                    "#.to_string(), connection).await.unwrap();
+                    scripting::start_game(script, connection).await.unwrap();
                 })
             };
         });
@@ -170,6 +167,44 @@ end
 
                         <button type="submit">"Join"</button>
                     </form>
+                    <Show
+                        when=move || {!custom_script.get()}
+                        fallback=view! {
+                            <p>
+                                <button on:click=move |_| {
+                                    set_custom_script.set(false);
+                                }>"Find game"</button>
+                            </p>
+                            <p>
+                                <textarea
+                                    placeholder="Lua script..."
+                                    prop:value=move || script.get()
+                                    on:input=move |event| {
+                                        set_script.set(Some(event_target_value(&event)))
+                                    }
+                                />
+                            </p>
+                        }
+                    >
+                        <p>
+                            <button on:click=move |_| {
+                                set_custom_script.set(true);
+                            }>"Use custom script"</button>
+                        </p>
+                        <p>
+                            <For
+                                each=move || {games.get().unwrap_or_default()}
+                                key=move |game| game.clone()
+                                children=move |game| view! {
+                                    <h2>{game.name.clone()}</h2>
+                                    <p>{game.description}</p>
+                                    <button on:click=move |_| {
+                                        set_script.set(Some(game.script.clone()))
+                                    }>{format!("Run {}", game.name)}</button>
+                                }
+                            />
+                        </p>
+                    </Show>
                     <p>{if joined.get() {"Joining..."} else {""}}</p>
                 }.into_any()
             }}
@@ -181,7 +216,7 @@ end
                 }
             }</p>
         </Show>
-    }
+    } 
 }
 
 #[component]
