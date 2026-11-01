@@ -28,6 +28,7 @@ pub fn App() -> impl IntoView {
     let (custom_script, set_custom_script) = signal(false);
     let (script, set_script) = signal(None::<String>);
     let (games, set_games) = signal(None::<Vec<Game>>);
+    let (current_game, set_current_game) = signal(None::<Game>);
 
     Effect::new(move || {
         spawn_local(async move {
@@ -165,7 +166,12 @@ pub fn App() -> impl IntoView {
                             placeholder="Username"
                         />
 
-                        <button type="submit">"Join"</button>
+                        <button type="submit">{ ["Host".to_string(), match current_game.get() {
+                            Some(game) => {
+                                [" ", &game.name].concat()
+                            },
+                            None => {String::new()}
+                        }].concat() }</button>
                     </form>
                     <Show
                         when=move || {!custom_script.get()}
@@ -189,6 +195,7 @@ pub fn App() -> impl IntoView {
                         <p>
                             <button on:click=move |_| {
                                 set_custom_script.set(true);
+                                set_current_game.set(None);
                             }>"Use custom script"</button>
                         </p>
                         <p>
@@ -197,8 +204,9 @@ pub fn App() -> impl IntoView {
                                 key=move |game| game.clone()
                                 children=move |game| view! {
                                     <h2>{game.name.clone()}</h2>
-                                    <p>{game.description}</p>
+                                    <p>{game.description.clone()}</p>
                                     <button on:click=move |_| {
+                                        set_current_game.set(Some(game.clone()));
                                         set_script.set(Some(game.script.clone()))
                                     }>{format!("Run {}", game.name)}</button>
                                 }
