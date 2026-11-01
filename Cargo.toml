@@ -12,8 +12,6 @@ gloo-timers = { version = "0.4.0", features = ["futures"], optional = true }
 leptos = { version = "0.8.22", features = ["csr"], optional = true }
 luaur = { version = "0.1.8", features = ["async", "serde", "macros"], optional = true, default-features = false }
 rand = { version = "0.10.3", optional = true }
-reqwest = { version = "0.13.5", features = ["json", "rustls-no-provider"], optional = true, default-features = false }
-rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"], optional = true }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = { version = "1.0.154", optional = true }
 thiserror = { version = "2.0.21", optional = true }
@@ -23,8 +21,11 @@ wasm-bindgen-futures = { version = "0.4.79", optional = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = { version = "1.53.3", features = ["macros", "rt-multi-thread"] }
+reqwest = { version = "0.13.5", features = ["json", "rustls-no-provider"], optional = true, default-features = false }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"], optional = true }
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 tokio = { version = "1.53.3", features = ["macros", "rt"] }
+reqwest = { version = "0.13.5", features = ["json"], optional = true }
 
 [features]
 server = ["dep:dashmap", "dep:rand", "dep:axum", "dep:tower-http"]
