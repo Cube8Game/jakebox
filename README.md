@@ -19,3 +19,7 @@ Go to [box.jakewhibley.org](https://box.jakewhibley.org) to play the latest stab
 ### Hosting
 
 If you want to host the game session, go to the website and click "Host". Then, pick a game (or paste your own script) and click the "Host" button next to the username field when you have chosen a game or a script. The game will start and it will give you a code. Give this code to anyone you want to be able to join the session.
+
+## Why I made this
+
+I love Jackbox, but I hate proprietary software and games that are hard or impossible to mod, so I made an engine that makes it easier to make these kinds of multiplayer games.
