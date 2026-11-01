@@ -1,6 +1,6 @@
 [package]
 name = "jakebox"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 
 [dependencies]
@@ -28,7 +28,7 @@ tokio = { version = "1.53.3", features = ["macros", "rt"] }
 
 [features]
 server = ["dep:dashmap", "dep:rand", "dep:axum", "dep:tower-http"]
-client = ["dep:reqwest", "dep:thiserror"]
+client = ["dep:reqwest", "dep:thiserror", "dep:rustls"]
 host = ["client", "dep:luaur", "dep:serde_json"]
 cli = ["dep:clap"]
 web = ["dep:leptos", "dep:wasm-bindgen-futures", "dep:gloo-timers"]
