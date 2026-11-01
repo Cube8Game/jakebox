@@ -11,7 +11,11 @@ Jakebox is a game engine where you can make multiplayer (or singleplayer) text-b
 - [ ]  Styling/CSS
 - [ ]  Unofficial game search
 
-## How to use
+## How to play
 
 Go to [jakebox.tunnl.gg](https://jakebox.tunnl.gg) to play the latest tagged release of the game.
 Go to [box.jakewhibley.org](https://box.jakewhibley.org) to play the latest stable version of the game.
+
+### Hosting
+
+If you want to host the game session, go to the website and click "Host". Then, pick a game (or paste your own script) and click the "Host" button next to the username field when you have chosen a game or a script. The game will start and it will give you a code. Give this code to anyone you want to be able to join the session.
