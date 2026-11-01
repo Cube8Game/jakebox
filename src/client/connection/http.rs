@@ -25,8 +25,8 @@ pub struct HttpConnection {
 impl HttpConnection {
     const SERVER_LIST: [&'static str; 3] = [
         "http://localhost:3000",
-        "https://box.jakewhibley.org",
-        "https://jakebox.tunnl.gg", // Backup server
+        "https://jakebox.tunnl.gg", // Unstable server
+        "https://box.jakewhibley.org", // Official stable server
     ];
 
     pub fn new(server_ip: String, game_id: String, username: String) -> Self {
