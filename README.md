@@ -23,3 +23,10 @@ If you want to host the game session, go to the website and click "Host". Then, 
 ## Why I made this
 
 I love Jackbox, but I hate proprietary software and games that are hard or impossible to mod, so I made an engine that makes it easier to make these kinds of multiplayer games.
+
+## Games
+
+There is only one official game so far. It is called Adventure.
+
+### Adventure
+<img width="1919" height="979" alt="image" src="https://github.com/user-attachments/assets/ef027e8d-7a95-4905-bfb8-8f54476ac7f6" />
