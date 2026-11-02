@@ -308,7 +308,8 @@ impl FromLua for UiElement {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum EventData {
-    Text(String)
+    Text(String),
+    Integer(i64)
 }
 
 #[cfg(feature = "host")]
@@ -317,6 +318,9 @@ impl IntoLua for EventData {
         match self {
             EventData::Text(s) => {
                 s.into_lua(lua)
+            }
+            EventData::Integer(i) => {
+                i.into_lua(lua)
             }
         }
     }
@@ -328,6 +332,9 @@ impl FromLua for EventData {
         match value {
             Value::String(s) => {
                 Ok(Self::Text(s.to_string_lossy()))
+            }
+            Value::Integer(i) => {
+                Ok(Self::Integer(i))
             }
             _ => Err(LuaError::FromLuaConversionError { 
                 from: value.type_name(), 
