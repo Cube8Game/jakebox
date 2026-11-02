@@ -30,7 +30,7 @@ The game uses Axum for the server (both the API and the site hosting), and it us
 
 ### AI coding tools used
 
-[This](https://en.wikipedia.org/wiki/Human_brain) is my favourite AI coding tool. It rarely ever halloucinates, and it's free! (No AI code is present in the repo)
+[This](https://en.wikipedia.org/wiki/Human_brain) is my favourite AI coding tool. It rarely ever hallucinates, and it's free! (No AI code is present in the repo)
 
 ## Games
 
