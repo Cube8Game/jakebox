@@ -289,6 +289,27 @@ fn Game(connection: ReadSignal<Option<Arc<HttpConnection>>>) -> impl IntoView {
                                 />
                             </form>
                         }.into_any()
+                    },
+                    UiElement::MultipleChoiceInput { key, options } => {
+                        view! {
+                            <p>
+                                {options
+                                    .iter()
+                                    .enumerate()
+                                    .map(|(i, s)| {
+                                        let key = key.clone();
+                                        view! {
+                                            <button on:click=move |_| {
+                                                let key = key.clone();
+                                                let data = EventData::Integer(i as i64);
+                                                spawn_local(async move {connection.get().unwrap().send_action(
+                                                    GameAction::Client(ClientGameAction::SubmitEventData { key, data })
+                                                ).await.unwrap();});
+                                            }>{s.clone()}</button>
+                                        }
+                                    }).collect_view()}
+                            </p>
+                        }.into_any()
                     }
                 }
             }

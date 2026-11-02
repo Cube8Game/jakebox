@@ -226,6 +226,10 @@ pub enum UiElement {
     TextInput {
         key: String,
         placeholder: String,
+    },
+    MultipleChoiceInput {
+        key: String,
+        options: Vec<String>
     }
 }
 
@@ -242,6 +246,11 @@ impl IntoLua for UiElement {
                 table.set("type", "text_input")?;
                 table.set("key", key)?;
                 table.set("placeholder", placeholder)?;
+            }
+            Self::MultipleChoiceInput { key, options } => {
+                table.set("type", "multiple_choice_input")?;
+                table.set("key", key)?;
+                table.set("options", options)?;
             }
         }
         Ok(Value::Table(table))
@@ -296,6 +305,25 @@ impl FromLua for UiElement {
                 })?;
 
                 Ok(Self::TextInput { key, placeholder })
+            }
+            "multiple_choice_input" => {
+                let key: String = table.get("key").map_err(|_| {
+                    LuaError::FromLuaConversionError { 
+                        from: value.type_name(), 
+                        to: "Event".to_string(), 
+                        message: Some("Missing or invalid field 'key'".to_string()) 
+                    }
+                })?;
+
+                let options: Vec<String> = table.get("options").map_err(|_| {
+                    LuaError::FromLuaConversionError { 
+                        from: value.type_name(), 
+                        to: "Event".to_string(), 
+                        message: Some("Missing or invalid field 'placeholder'".to_string()) 
+                    }
+                })?;
+
+                Ok(Self::MultipleChoiceInput { key, options })
             }
             _ => Err(LuaError::FromLuaConversionError { 
                 from: value.type_name(), 
