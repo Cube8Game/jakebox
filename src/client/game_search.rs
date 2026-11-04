@@ -21,8 +21,8 @@ struct GameRegistry {
 
 impl Game {
     pub async fn get_all() -> Option<Vec<Self>> {
-        const GAMES_LIST_URL: &'static str = "https://raw.githubusercontent.com/Cube8Game/jakebox-games/refs/heads/main/games.json";
-        const GAMES_DIR_URL: &'static str = "https://raw.githubusercontent.com/Cube8Game/jakebox-games/refs/heads/main/games/";
+        const GAMES_LIST_URL: &'static str = "https://raw.githubusercontent.com/Cube8Game/jakebox-games/refs/heads/latest/games.json";
+        const GAMES_DIR_URL: &'static str = "https://raw.githubusercontent.com/Cube8Game/jakebox-games/refs/heads/latest/games/";
 
         let games: Games = serde_json::from_str(&reqwest::get(
             GAMES_LIST_URL
