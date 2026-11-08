@@ -4,12 +4,20 @@ use gloo_timers::future::TimeoutFuture;
 use leptos::{html, logging::debug_log, prelude::*};
 use wasm_bindgen_futures::spawn_local;
 
-use crate::{client::{connection::{common::Connection, http::HttpConnection}, game_search::Game, scripting}, common::{connection::{ClientGameAction, GameAction}, state::{Event, EventData, UiElement}}};
+use crate::{client::{connection::{common::Connection, http::{self, HttpConnection}}, game_search::Game, scripting}, common::{connection::{ClientGameAction, GameAction}, state::{Event, EventData, UiElement}}};
 
 #[derive(Clone, Copy)]
 enum PlayMode {
     Join,
     Host
+}
+
+#[derive(Debug, thiserror::Error, Clone)]
+enum Error {
+    #[error("No connection established.")]
+    NoConnection,
+    #[error("Error with HTTP request: {0}")]
+    HttpError(String)
 }
 
 #[component]
@@ -29,6 +37,9 @@ pub fn App() -> impl IntoView {
     let (script, set_script) = signal(None::<String>);
     let (games, set_games) = signal(None::<Vec<Game>>);
     let (current_game, set_current_game) = signal(None::<Game>);
+
+    let (script_error, set_script_error) = signal(None::<scripting::Error>);
+    let (script_success, set_script_success) = signal(false);
 
     Effect::new(move || {
         spawn_local(async move {
@@ -94,7 +105,14 @@ pub fn App() -> impl IntoView {
                 set_connection.set(Some(Arc::new(connection.clone())));
                 set_hosting.set(true);
                 spawn_local(async move {
-                    scripting::start_game(script, connection).await.unwrap();
+                    match scripting::start_game(script, connection).await {
+                        Ok(_) => {
+                            set_script_success.set(true);
+                        }
+                        Err(e) => {
+                            set_script_error.set(Some(e));
+                        }
+                    };
                 })
             };
         });
@@ -110,7 +128,7 @@ pub fn App() -> impl IntoView {
             fallback=move || if joined.get() {
                 view! { <Game connection=connection/> }.into_any()
             } else {
-                view! { <HostScreen connection=connection/> }.into_any()
+                view! { <HostScreen connection=connection script_error=script_error script_success=script_success/> }.into_any()
             }
         >
             {match play_mode.get() {
@@ -231,6 +249,8 @@ pub fn App() -> impl IntoView {
 fn Game(connection: ReadSignal<Option<Arc<HttpConnection>>>) -> impl IntoView {
     let (event, set_event) = signal(Event::new());
 
+    let (error, set_error) = signal(None::<Error>);
+
     Effect::new(move |_| {
         let connection = Arc::clone(match &connection.get() {
             Some(connection) => connection,
@@ -259,6 +279,13 @@ fn Game(connection: ReadSignal<Option<Arc<HttpConnection>>>) -> impl IntoView {
 
     view! {
         <h1>"Game"</h1>
+        {move || {
+            if let Some(e) = error.get() {
+                view! { "An error occurred: " {format!("{}", e)} }.into_any()
+            } else {
+                view! {}.into_any()
+            }
+        }}
         <For
             each=move || {event.get().ui}
             key=|element| element.clone()
@@ -275,9 +302,17 @@ fn Game(connection: ReadSignal<Option<Arc<HttpConnection>>>) -> impl IntoView {
                                 event.prevent_default();
                                 let key = key.clone();
                                 let data = EventData::Text(response.get());
-                                spawn_local(async move {connection.get().unwrap().send_action(
-                                    GameAction::Client(ClientGameAction::SubmitEventData { key, data })
-                                ).await.unwrap();});
+                                spawn_local(async move {
+                                    if let Some(connection) = connection.get() {
+                                        if let Err(e) = connection.send_action(
+                                            GameAction::Client(ClientGameAction::SubmitEventData { key, data })
+                                        ).await {
+                                            set_error.set(Some(Error::HttpError(format!("{:?}", e))))
+                                        }
+                                    } else {
+                                        set_error.set(Some(Error::NoConnection))
+                                    }
+                                });
                             }>
                                 <input
                                     type="text"
@@ -302,9 +337,15 @@ fn Game(connection: ReadSignal<Option<Arc<HttpConnection>>>) -> impl IntoView {
                                             <button on:click=move |_| {
                                                 let key = key.clone();
                                                 let data = EventData::Integer(i as i64);
-                                                spawn_local(async move {connection.get().unwrap().send_action(
-                                                    GameAction::Client(ClientGameAction::SubmitEventData { key, data })
-                                                ).await.unwrap();});
+                                                spawn_local(async move {
+                                                    if let Some(connection) = connection.get() {
+                                                        if let Err(e) = connection.send_action(
+                                                            GameAction::Client(ClientGameAction::SubmitEventData { key, data })
+                                                        ).await {
+                                                            set_error.set(Some(Error::HttpError(e.to_string())))
+                                                        }
+                                                    }
+                                                });
                                             }>{s.clone()}</button>
                                         }
                                     }).collect_view()}
@@ -318,8 +359,30 @@ fn Game(connection: ReadSignal<Option<Arc<HttpConnection>>>) -> impl IntoView {
 }
 
 #[component]
-fn HostScreen(connection: ReadSignal<Option<Arc<HttpConnection>>>) -> impl IntoView {
-    view! {
-        <p>"This tab is currently hosting the example game. Go to another tab and join with code " {connection.get().unwrap().game_id.clone()} "."</p>
-    }
+fn HostScreen(connection: ReadSignal<Option<Arc<HttpConnection>>>, script_error: ReadSignal<Option<scripting::Error>>, script_success: ReadSignal<bool>) -> impl IntoView {
+    let (error, set_error) = signal(None::<Error>);
+    view! {{move || {
+        match (script_error.get(), script_success.get(), error.get()) {
+            (Some(e), false, _) => {
+                view! {
+                    <p>"An error occurred: " {format!("{:?}", e)}</p>
+                }.into_any()
+            }
+            (_, false, Some(e)) => {
+                view! {
+                    <p>"An error occurred: " {format!("{:?}", e)}</p>
+                }.into_any()
+            }
+            (None, true, None) => {
+                view! {
+                    <p>"The game ended."</p>
+                }.into_any()
+            }
+            _ => {
+                view! {
+                    <p>"This tab is currently hosting the game. Go to another tab and join with code " {move || {if let Some(connection) = connection.get() { connection.game_id.clone() } else { set_error.set(Some(Error::NoConnection)); "".to_string() }}} "."</p>
+                }.into_any()
+            }
+        }
+    }}}
 }

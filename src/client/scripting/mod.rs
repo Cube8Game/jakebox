@@ -17,6 +17,15 @@ pub enum Error {
     IoError(#[from] std::io::Error)
 }
 
+impl Clone for Error {
+    fn clone(&self) -> Self {
+        match self {
+            Self::LuaError(e) => Self::LuaError(e.clone()),
+            Self::IoError(e) => Self::IoError(std::io::Error::new(e.kind(), e.to_string()))
+        }
+    }
+}
+
 type Result<T> = std::result::Result<T, Error>;
 
 async fn lua_get_state(lua: Lua, _: ()) -> LuaResult<GameState> {
