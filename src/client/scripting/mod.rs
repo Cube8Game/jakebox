@@ -52,6 +52,16 @@ async fn lua_sleep(_lua: Lua, secs: f32) -> LuaResult<()> {
     Ok(())
 }
 
+fn lua_rand_num(_lua: &Lua, (min, max): (f32, f32)) -> LuaResult<()> {
+    rand::random_range(min..max);
+    Ok(())
+}
+
+fn lua_rand_int(_lua: &Lua, (min, max): (i64, i64)) -> LuaResult<()> {
+    rand::random_range(min..max);
+    Ok(())
+}
+
 fn lua_print(_lua: &Lua, text: String) -> LuaResult<()> {
     println!("{}", text);
     Ok(())
@@ -87,6 +97,16 @@ pub async fn start_game(game: String, connection: HttpConnection) -> Result<()> 
     lua.globals().set(
         "sleep",
         lua.create_async_function(lua_sleep).unwrap()
+    ).unwrap();
+    
+    lua.globals().set(
+        "rand_num",
+        lua.create_function(lua_rand_num).unwrap()
+    ).unwrap();
+    
+    lua.globals().set(
+        "rand_int",
+        lua.create_function(lua_rand_int).unwrap()
     ).unwrap();
     
     lua.globals().set(
