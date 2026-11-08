@@ -30,7 +30,7 @@ reqwest = { version = "0.13.5", features = ["json"], optional = true }
 [features]
 server = ["dep:dashmap", "dep:rand", "dep:axum", "dep:tower-http"]
 client = ["dep:reqwest", "dep:thiserror", "dep:rustls"]
-host = ["client", "dep:luaur", "dep:serde_json"]
+host = ["client", "dep:luaur", "dep:serde_json", "dep:rand"]
 cli = ["dep:clap"]
 web = ["dep:leptos", "dep:wasm-bindgen-futures", "dep:gloo-timers"]
 static-hosting = ["server"]
