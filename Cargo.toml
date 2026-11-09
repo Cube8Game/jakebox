@@ -8,6 +8,7 @@ anyhow = "1.0.104"
 axum = { version = "0.8.9", optional = true }
 clap = { version = "4.6.7", features = ["derive"], optional = true }
 dashmap = { version = "6.2.1", optional = true }
+fastrand = { version = "2.5.0", optional = true }
 gloo-timers = { version = "0.4.0", features = ["futures"], optional = true }
 leptos = { version = "0.8.22", features = ["csr"], optional = true }
 luaur = { version = "0.1.8", features = ["async", "serde", "macros"], optional = true, default-features = false }
@@ -30,7 +31,7 @@ reqwest = { version = "0.13.5", features = ["json"], optional = true }
 [features]
 server = ["dep:dashmap", "dep:rand", "dep:axum", "dep:tower-http"]
 client = ["dep:reqwest", "dep:thiserror", "dep:rustls"]
-host = ["client", "dep:luaur", "dep:serde_json", "dep:rand"]
+host = ["client", "dep:luaur", "dep:serde_json", "dep:fastrand"]
 cli = ["dep:clap"]
 web = ["dep:leptos", "dep:wasm-bindgen-futures", "dep:gloo-timers"]
 static-hosting = ["server"]

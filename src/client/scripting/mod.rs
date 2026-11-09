@@ -52,14 +52,12 @@ async fn lua_sleep(_lua: Lua, secs: f32) -> LuaResult<()> {
     Ok(())
 }
 
-fn lua_rand_num(_lua: &Lua, (min, max): (f32, f32)) -> LuaResult<()> {
-    rand::random_range(min..max);
-    Ok(())
+fn lua_rand_num(_lua: &Lua, (min, max): (f32, f32)) -> LuaResult<f32> {
+    Ok(fastrand::f32() * (max-min) + min)
 }
 
-fn lua_rand_int(_lua: &Lua, (min, max): (i64, i64)) -> LuaResult<()> {
-    rand::random_range(min..max);
-    Ok(())
+fn lua_rand_int(_lua: &Lua, (min, max): (i64, i64)) -> LuaResult<i64> {
+    Ok(fastrand::i64(min..max))
 }
 
 fn lua_print(_lua: &Lua, text: String) -> LuaResult<()> {
