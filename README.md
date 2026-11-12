@@ -14,7 +14,7 @@ Jakebox is a game engine where you can make multiplayer (or singleplayer) text-b
 ## How to play
 
 Go to [jakebox.tunnl.gg](https://jakebox.tunnl.gg) to play the latest tagged release of the game.
-Go to [box.jakewhibley.org](https://box.jakewhibley.org) to play the latest stable version of the game.
+The site [box.jakewhibley.org](https://box.jakewhibley.org) is no longer being used as the official server, so it may or may not work. Use [jakebox.tunnl.gg](https://jakebox.tunnl.gg) instead.
 
 ### Hosting
 
