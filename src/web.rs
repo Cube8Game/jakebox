@@ -146,7 +146,8 @@ pub fn App() -> impl IntoView {
                         let join_code = join_code_input
                             .get()
                             .expect("Input should be mounted")
-                            .value();
+                            .value()
+                            .to_uppercase();
 
                         on_submit_join(join_code, username);
                     }>
