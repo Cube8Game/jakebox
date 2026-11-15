@@ -60,7 +60,7 @@ pub fn App() -> impl IntoView {
     let (games, set_games) = signal(None::<Vec<Game>>);
     let (current_game, set_current_game) = signal(None::<Game>);
 
-    let (script_error, set_script_error) = signal(None::<scripting::Error>);
+    let (script_error, set_script_error) = signal(None::<scripting::error::Error>);
     let (script_success, set_script_success) = signal(false);
 
     let host_ui: LeptosState<Vec<HostUiElement>> = signal(Vec::new()).into();
@@ -134,7 +134,7 @@ pub fn App() -> impl IntoView {
                     set_connection.set(Some(Arc::new(connection.clone())));
                     set_hosting.set(true);
                     spawn_local(async move {
-                        match scripting::start_game(script, connection, host_ui.clone()).await {
+                        match scripting::start::start_game(script, connection, host_ui.clone()).await {
                             Ok(_) => {
                                 set_script_success.set(true);
                             }
@@ -394,7 +394,7 @@ fn Game(connection: ReadSignal<Option<Arc<HttpConnection>>>) -> impl IntoView {
 }
 
 #[component]
-fn HostScreen(connection: ReadSignal<Option<Arc<HttpConnection>>>, script_error: ReadSignal<Option<scripting::Error>>, script_success: ReadSignal<bool>, ui: ReadSignal<Vec<HostUiElement>>) -> impl IntoView {
+fn HostScreen(connection: ReadSignal<Option<Arc<HttpConnection>>>, script_error: ReadSignal<Option<scripting::error::Error>>, script_success: ReadSignal<bool>, ui: ReadSignal<Vec<HostUiElement>>) -> impl IntoView {
     let (error, set_error) = signal(None::<Error>);
     view! {{move || {
         match (script_error.get(), script_success.get(), error.get()) {
