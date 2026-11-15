@@ -20,6 +20,11 @@ async fn main() -> Result<()> {
     #[cfg(feature = "cli")]
     cli::start_cli().await?;
     #[cfg(feature = "web")]
-    leptos::mount::mount_to_body(web::App); 
+    leptos::mount::mount_to_body(|| {
+        if let Some(loading) = leptos::prelude::document().get_element_by_id("loading") {
+            loading.remove();
+        }
+        web::App()
+    }); 
     Ok(())
 }
