@@ -4,12 +4,34 @@ use gloo_timers::future::TimeoutFuture;
 use leptos::{html, logging::debug_log, prelude::*};
 use wasm_bindgen_futures::spawn_local;
 
-use crate::{client::{connection::{common::Connection, http::{self, HttpConnection}}, game_search::Game, scripting}, common::{connection::{ClientGameAction, GameAction}, state::{Event, EventData, UiElement}}};
+use crate::{client::{connection::{common::Connection, http::HttpConnection}, game_search::Game, host_ui::HostUiElement, scripting, state}, common::{connection::{ClientGameAction, GameAction}, state::{Event, EventData, UiElement}}};
 
 #[derive(Clone, Copy)]
 enum PlayMode {
     Join,
     Host
+}
+
+#[derive(Clone)]
+struct LeptosState<T> {
+    read_signal: ReadSignal<T>,
+    write_signal: WriteSignal<T>
+}
+
+impl<T: Send + Sync + 'static> state::State<T> for LeptosState<T> {
+    fn with<R>(&self, f: impl FnOnce(&T) -> R) -> R {
+        self.read_signal.with(f)
+    }
+    
+    fn with_mut<R>(&self, f: impl FnOnce(&mut T) -> R) -> R {
+        self.write_signal.try_update(f).expect("Signal has been disposed")
+    }
+}
+
+impl<T> From<(ReadSignal<T>, WriteSignal<T>)> for LeptosState<T> {
+    fn from((read_signal, write_signal): (ReadSignal<T>, WriteSignal<T>)) -> Self {
+        Self { read_signal, write_signal }
+    }
 }
 
 #[derive(Debug, thiserror::Error, Clone)]
@@ -40,6 +62,8 @@ pub fn App() -> impl IntoView {
 
     let (script_error, set_script_error) = signal(None::<scripting::Error>);
     let (script_success, set_script_success) = signal(false);
+
+    let host_ui: LeptosState<Vec<HostUiElement>> = signal(Vec::new()).into();
 
     Effect::new(move || {
         spawn_local(async move {
@@ -79,43 +103,49 @@ pub fn App() -> impl IntoView {
         });
     };
 
-    let on_submit_host = move |username: String| {
-        let server_ip = match server_ip.get() {
-            Some(ip) => match ip {
-                Some(ip) => ip,
+    let on_submit_host = {
+        let host_ui = host_ui.clone();
+        move |username: String| {
+            let server_ip = match server_ip.get() {
+                Some(ip) => match ip {
+                    Some(ip) => ip,
+                    None => {
+                        return;
+                    }
+                },
                 None => {
                     return;
                 }
-            },
-            None => {
-                return;
-            }
-        };
-        let script = match script.get() {
-            Some(s) => s,
-            None => {
-                return;
-            }
-        };
-        spawn_local(async move {
-            if let Ok(connection) = HttpConnection::host(
-                server_ip.to_string(),
-                username
-            ).await {
-                set_connection.set(Some(Arc::new(connection.clone())));
-                set_hosting.set(true);
-                spawn_local(async move {
-                    match scripting::start_game(script, connection).await {
-                        Ok(_) => {
-                            set_script_success.set(true);
-                        }
-                        Err(e) => {
-                            set_script_error.set(Some(e));
-                        }
-                    };
-                })
             };
-        });
+            let script = match script.get() {
+                Some(s) => s,
+                None => {
+                    return;
+                }
+            };
+
+            let host_ui = host_ui.clone();
+
+            spawn_local(async move {
+                if let Ok(connection) = HttpConnection::host(
+                    server_ip.to_string(),
+                    username
+                ).await {
+                    set_connection.set(Some(Arc::new(connection.clone())));
+                    set_hosting.set(true);
+                    spawn_local(async move {
+                        match scripting::start_game(script, connection, host_ui.clone()).await {
+                            Ok(_) => {
+                                set_script_success.set(true);
+                            }
+                            Err(e) => {
+                                set_script_error.set(Some(e));
+                            }
+                        };
+                    })
+                };
+            });
+        }
     };
 
     let join_code_input: NodeRef<html::Input> = NodeRef::new();
@@ -128,7 +158,7 @@ pub fn App() -> impl IntoView {
             fallback=move || if joined.get() {
                 view! { <Game connection=connection/> }.into_any()
             } else {
-                view! { <HostScreen connection=connection script_error=script_error script_success=script_success/> }.into_any()
+                view! { <HostScreen connection=connection script_error=script_error script_success=script_success ui=host_ui.read_signal /> }.into_any()
             }
         >
             {match play_mode.get() {
@@ -166,74 +196,78 @@ pub fn App() -> impl IntoView {
                     </form>
                     <p>{if joined.get() {"Joining..."} else {""}}</p>
                 }.into_any(),
-                PlayMode::Host => view! {
-                    <button on:click=move |_| {
-                        set_play_mode.set(PlayMode::Join)
-                    }>"Join Game"</button>
-                    <form on:submit=move |event| {
-                        event.prevent_default();
-                        let username = username_input
-                            .get()
-                            .expect("Input should be mounted")
-                            .value();
+                PlayMode::Host => {
+                    let username_input = username_input.clone();
+                    let on_submit_host = on_submit_host.clone();
+                    view! {
+                        <button on:click=move |_| {
+                            set_play_mode.set(PlayMode::Join)
+                        }>"Join Game"</button>
+                        <form on:submit=move |event| {
+                            event.prevent_default();
+                            let username = username_input
+                                .get()
+                                .expect("Input should be mounted")
+                                .value();
 
-                        on_submit_host(username);
-                    }>
-                        <input
-                            node_ref=username_input
-                            type="text"
-                            placeholder="Username"
-                        />
+                            on_submit_host(username);
+                        }>
+                            <input
+                                node_ref=username_input
+                                type="text"
+                                placeholder="Username"
+                            />
 
-                        <button type="submit">{ ["Host".to_string(), match current_game.get() {
-                            Some(game) => {
-                                [" ", &game.name].concat()
-                            },
-                            None => {String::new()}
-                        }].concat() }</button>
-                    </form>
-                    <Show
-                        when=move || {!custom_script.get()}
-                        fallback=view! {
+                            <button type="submit">{ ["Host".to_string(), match current_game.get() {
+                                Some(game) => {
+                                    [" ", &game.name].concat()
+                                },
+                                None => {String::new()}
+                            }].concat() }</button>
+                        </form>
+                        <Show
+                            when=move || {!custom_script.get()}
+                            fallback=view! {
+                                <p>
+                                    <button on:click=move |_| {
+                                        set_custom_script.set(false);
+                                    }>"Find game"</button>
+                                </p>
+                                <p>
+                                    <textarea
+                                        placeholder="Lua script..."
+                                        prop:value=move || script.get()
+                                        on:input=move |event| {
+                                            set_script.set(Some(event_target_value(&event)))
+                                        }
+                                    />
+                                </p>
+                            }
+                        >
                             <p>
                                 <button on:click=move |_| {
-                                    set_custom_script.set(false);
-                                }>"Find game"</button>
+                                    set_custom_script.set(true);
+                                    set_current_game.set(None);
+                                }>"Use custom script"</button>
                             </p>
                             <p>
-                                <textarea
-                                    placeholder="Lua script..."
-                                    prop:value=move || script.get()
-                                    on:input=move |event| {
-                                        set_script.set(Some(event_target_value(&event)))
+                                <For
+                                    each=move || {games.get().unwrap_or_default()}
+                                    key=move |game| game.clone()
+                                    children=move |game| view! {
+                                        <h2>{game.name.clone()}</h2>
+                                        <p>{game.description.clone()}</p>
+                                        <button on:click=move |_| {
+                                            set_current_game.set(Some(game.clone()));
+                                            set_script.set(Some(game.script.clone()))
+                                        }>{format!("Run {}", game.name)}</button>
                                     }
                                 />
                             </p>
-                        }
-                    >
-                        <p>
-                            <button on:click=move |_| {
-                                set_custom_script.set(true);
-                                set_current_game.set(None);
-                            }>"Use custom script"</button>
-                        </p>
-                        <p>
-                            <For
-                                each=move || {games.get().unwrap_or_default()}
-                                key=move |game| game.clone()
-                                children=move |game| view! {
-                                    <h2>{game.name.clone()}</h2>
-                                    <p>{game.description.clone()}</p>
-                                    <button on:click=move |_| {
-                                        set_current_game.set(Some(game.clone()));
-                                        set_script.set(Some(game.script.clone()))
-                                    }>{format!("Run {}", game.name)}</button>
-                                }
-                            />
-                        </p>
-                    </Show>
-                    <p>{if joined.get() {"Joining..."} else {""}}</p>
-                }.into_any()
+                        </Show>
+                        <p>{if joined.get() {"Joining..."} else {""}}</p>
+                    }.into_any()
+                }
             }}
             <p>"Server IP: " {
                 move || match server_ip.get() {
@@ -360,7 +394,7 @@ fn Game(connection: ReadSignal<Option<Arc<HttpConnection>>>) -> impl IntoView {
 }
 
 #[component]
-fn HostScreen(connection: ReadSignal<Option<Arc<HttpConnection>>>, script_error: ReadSignal<Option<scripting::Error>>, script_success: ReadSignal<bool>) -> impl IntoView {
+fn HostScreen(connection: ReadSignal<Option<Arc<HttpConnection>>>, script_error: ReadSignal<Option<scripting::Error>>, script_success: ReadSignal<bool>, ui: ReadSignal<Vec<HostUiElement>>) -> impl IntoView {
     let (error, set_error) = signal(None::<Error>);
     view! {{move || {
         match (script_error.get(), script_success.get(), error.get()) {
@@ -381,7 +415,18 @@ fn HostScreen(connection: ReadSignal<Option<Arc<HttpConnection>>>, script_error:
             }
             _ => {
                 view! {
-                    <p>"This tab is currently hosting the game. Go to another tab and join with code " {move || {if let Some(connection) = connection.get() { connection.game_id.clone() } else { set_error.set(Some(Error::NoConnection)); "".to_string() }}} "."</p>
+                    <p>"Join Code: " {move || {if let Some(connection) = connection.get() { connection.game_id.clone() } else { set_error.set(Some(Error::NoConnection)); "".to_string() }}} </p>
+                    <For 
+                        each=move || {ui.get()}
+                        key=|element| element.clone()
+                        children=move |element| {
+                            match element {
+                                HostUiElement::Text(s) => view! {
+                                    <p>{s}</p>
+                                }.into_any()
+                            }
+                        }
+                    />
                 }.into_any()
             }
         }

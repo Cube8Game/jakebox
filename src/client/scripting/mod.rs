@@ -6,7 +6,7 @@ use tokio::time::sleep;
 #[cfg(target_arch = "wasm32")]
 use gloo_timers::future::sleep;
 
-use crate::{client::connection::{common::Connection, http::HttpConnection}, common::{connection::{GameAction, HostGameAction}, state::{GameState, UiElement}}};
+use crate::{client::{connection::{common::Connection, http::HttpConnection}, host_ui::HostUiElement, state::State}, common::{connection::{GameAction, HostGameAction}, state::{GameState, UiElement}}};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -47,6 +47,12 @@ async fn lua_update_ui(lua: Lua, (username, new_ui): (String, Vec<UiElement>)) -
     Ok(())
 }
 
+fn lua_update_host_ui<T: 'static + State<Vec<HostUiElement>>>(lua: &Lua, new_ui: Vec<HostUiElement>) -> LuaResult<()> {
+    let host_ui = lua.app_data_ref::<T>().expect("Host UI state not provided by Lua state.");
+    host_ui.with_mut(|ui: &mut Vec<HostUiElement>| {*ui = new_ui;});
+    Ok(())
+}
+
 async fn lua_sleep(_lua: Lua, secs: f32) -> LuaResult<()> {
     sleep(Duration::from_secs_f32(secs)).await;
     Ok(())
@@ -65,9 +71,10 @@ fn lua_print(_lua: &Lua, text: String) -> LuaResult<()> {
     Ok(())
 }
 
-pub async fn start_game(game: String, connection: HttpConnection) -> Result<()> {
+pub async fn start_game<T: 'static + State<Vec<HostUiElement>>>(game: String, connection: HttpConnection, host_ui: T) -> Result<()> {
     let lua = Lua::new();
     lua.set_app_data(connection);
+    lua.set_app_data(host_ui);
     
     lua.sandbox(true)?;
 
@@ -88,6 +95,11 @@ pub async fn start_game(game: String, connection: HttpConnection) -> Result<()> 
     api.set(
         "update_ui",
         lua.create_async_function(lua_update_ui).unwrap()
+    )?;
+    
+    api.set(
+        "update_host_ui",
+        lua.create_function(lua_update_host_ui::<T>).unwrap()
     )?;
 
     lua.globals().set("jakebox", api).unwrap();
