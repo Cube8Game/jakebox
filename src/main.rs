@@ -9,8 +9,6 @@ use jakebox::web;
 async fn main() -> Result<()> {
     #[cfg(feature = "cli")]
     cli::start_cli().await?;
-    #[cfg(feature = "web")]
-    leptos::mount::mount_to_body(web::App); 
     Ok(())
 }
 
