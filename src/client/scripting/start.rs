@@ -1,12 +1,17 @@
 use luaur::prelude::*;
 
-use crate::client::{connection::http::HttpConnection, host_ui::HostUiElement, state::State};
+use crate::client::{connection::http::HttpConnection, host_ui::HostUiElement, scripting::event::{EventManager, EventQueue}, state::State};
 use super::{api::*, error::Result};
 
-pub async fn start_game<T: 'static + State<Vec<HostUiElement>>>(game: String, connection: HttpConnection, host_ui: T) -> Result<()> {
+pub async fn start_game<
+    HostUiState: 'static + State<Vec<HostUiElement>>,
+    EventQueueState: 'static + State<EventQueue>
+>(game: String, connection: HttpConnection, host_ui: HostUiState, event_queue: EventQueueState) -> Result<()> {
     let lua = Lua::new();
     lua.set_app_data(connection);
     lua.set_app_data(host_ui);
+    lua.set_app_data(event_queue);
+    lua.set_app_data(EventManager::default());
     
     lua.sandbox(true)?;
 
@@ -31,7 +36,17 @@ pub async fn start_game<T: 'static + State<Vec<HostUiElement>>>(game: String, co
     
     api.set(
         "update_host_ui",
-        lua.create_function(lua_update_host_ui::<T>).unwrap()
+        lua.create_function(lua_update_host_ui::<HostUiState>).unwrap()
+    )?;
+    
+    api.set(
+        "on_event",
+        lua.create_function(lua_on_event).unwrap()
+    )?;
+    
+    api.set(
+        "update_events",
+        lua.create_function(lua_update_events::<EventQueueState>).unwrap()
     )?;
 
     lua.globals().set("jakebox", api).unwrap();

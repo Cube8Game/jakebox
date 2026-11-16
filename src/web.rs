@@ -1,10 +1,10 @@
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
 use gloo_timers::future::TimeoutFuture;
 use leptos::{html, logging::debug_log, prelude::*};
 use wasm_bindgen_futures::spawn_local;
 
-use crate::{client::{connection::{common::Connection, http::HttpConnection}, game_search::Game, host_ui::HostUiElement, scripting, state}, common::{connection::{ClientGameAction, GameAction}, state::{Event, EventData, UiElement}}};
+use crate::{client::{connection::{common::Connection, http::HttpConnection}, game_search::Game, host_ui::HostUiElement, scripting::{self, event::{EventEmit, EventQueue}}, state::{self, State}}, common::{connection::{ClientGameAction, GameAction}, state::{Event, EventData, GameState, UiElement}}};
 
 #[derive(Clone, Copy)]
 enum PlayMode {
@@ -64,6 +64,7 @@ pub fn App() -> impl IntoView {
     let (script_success, set_script_success) = signal(false);
 
     let host_ui: LeptosState<Vec<HostUiElement>> = signal(Vec::new()).into();
+    let event_queue: LeptosState<EventQueue> = signal(EventQueue::default()).into();
 
     Effect::new(move || {
         spawn_local(async move {
@@ -125,6 +126,7 @@ pub fn App() -> impl IntoView {
             };
 
             let host_ui = host_ui.clone();
+            let event_queue_cloned = event_queue.clone();
 
             spawn_local(async move {
                 if let Ok(connection) = HttpConnection::host(
@@ -134,7 +136,7 @@ pub fn App() -> impl IntoView {
                     set_connection.set(Some(Arc::new(connection.clone())));
                     set_hosting.set(true);
                     spawn_local(async move {
-                        match scripting::start::start_game(script, connection, host_ui.clone()).await {
+                        match scripting::start::start_game(script, connection, host_ui, event_queue_cloned).await {
                             Ok(_) => {
                                 set_script_success.set(true);
                             }
@@ -144,6 +146,39 @@ pub fn App() -> impl IntoView {
                         };
                     })
                 };
+            });
+            let event_queue_cloned = event_queue.clone();
+            spawn_local(async move {
+                let mut previous_state = GameState::new("".to_string());
+                loop {
+                    gloo_timers::future::sleep(Duration::from_secs(2)).await;
+                    if let Some(connection) = connection.get() {
+                        let new_state = if let Ok(state) = connection.get_state().await {
+                            state
+                        } else {
+                            todo!()
+                        };
+                        if previous_state.get_players() != new_state.get_players() {
+                            for player in new_state.get_players() {
+                                if let Some(previous_player_state) = previous_state.get_players().get(player.0) {
+                                    let previous_data = &previous_player_state.event.data;
+                                    let new_data = &player.1.event.data;
+                                    if previous_data != new_data {
+                                        for (key, value) in new_data {
+                                            if previous_data.get(key) != Some(value) {
+                                                event_queue_cloned.with_mut(|queue| queue.push(EventEmit::PlayerSubmit { player: player.1.clone(), key: key.clone(), value: value.clone() }))
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    event_queue_cloned.with_mut(|queue| queue.push(EventEmit::PlayerJoin(player.1.clone())))
+                                }
+                            }
+                        }
+
+                        previous_state = new_state;
+                    }
+                }
             });
         }
     };

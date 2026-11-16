@@ -97,10 +97,10 @@ impl FromLua for GameState {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct Player {
     username: String,
-    event: Event
+    pub event: Event
 }
 
 impl Player {
@@ -160,7 +160,7 @@ impl FromLua for Player {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct Event {
     pub ui: Vec<UiElement>,
     pub data: HashMap<String, EventData>
@@ -334,7 +334,7 @@ impl FromLua for UiElement {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub enum EventData {
     Text(String),
     Integer(i64)
